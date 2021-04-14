@@ -1,1 +1,1 @@
-# poster_bot
+posting_bot
