@@ -7,6 +7,7 @@ from aiogram.utils import executor
 from loader import bot, dp
 from common.constants import USER, INVITE
 from database.mongodb.mongodriver import MongoDriver
+from common.db_user_format import USER_FORMAT
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,24 +29,27 @@ def out_keyword_menu():
 
 
 @dp.message_handler(commands=['start'], state=None)
-async def cmd_start(message: types.Message,  state: FSMContext):
+async def cmd_start(message: types.Message):
     user = types.User.get_current()
+    markup = types.ReplyKeyboardRemove()
     if db_user.is_in(USER.ID, user[USER.ID]):
         await BotState.main.set()
-        await message.answer("Снова здравствуйте!")
+        await message.answer("Снова здравствуйте!", reply_markup=markup)
         markup = out_keyword_menu()
         await message.answer("Выберите действие", reply_markup=markup)
     else:
-        await message.answer(str(message.from_user.first_name) + " Привет \n Место для красочного приветствия")
+        await message.answer(str(message.from_user.first_name) + " Привет \n Место для красочного приветствия",
+                             reply_markup=markup)
         await message.answer('Пройдите авторизацию')
         await BotState.auth.set()
         await message.answer('Введите код приглашения:')
 
 
 @dp.message_handler(state=BotState.auth)
-async def process_auth(message: types.Message, state: FSMContext):
+async def process_auth(message: types.Message):
     if db_invite.is_in(INVITE.INVITE_KEY, str(message.text)):
-        db_user.push(dict(types.User.get_current()))
+        user_data = USER_FORMAT(types.User.get_current())
+        db_user.push(user_data.to_dict())
         await BotState.main.set()
         await message.answer("Успешный вход, добро пожаловать!")
         markup = out_keyword_menu()
@@ -64,7 +68,7 @@ async def add_post(message: types.Message):
     media = types.InlineKeyboardMarkup()
     _button = types.InlineKeyboardButton(text="inst", callback_data='instagram')
     media.add(_button)
-    await message.answer('Подключенные социальные сети:', reply_markup=media, )
+    await message.answer('Подключенные социальные сети:', reply_markup=media)
 
 
 @dp.message_handler(Text(equals="Настройки"), state=BotState.main)
