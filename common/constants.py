@@ -9,6 +9,7 @@ class USER:
     USERNAME = 'username'
     LANGUAGE_CODE = 'language_code'
     ADMIN_RULE = 'admin_rule'
+    SOCIAL_NET = 'social_network'
 
 
 class INVITE:

@@ -52,6 +52,7 @@ async def process_auth(message: types.Message, state: FSMContext):
         await message.answer("Выберите действие", reply_markup=markup)
     else:
         await message.answer("Такого приглашения не существует, повторите попытку")
+        await message.answer('Введите код приглашения:')
 
 
 @dp.message_handler(Text(equals="Сделать пост"), state=BotState.main)
@@ -59,8 +60,11 @@ async def add_post(message: types.Message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add("Назад")
     await BotState.active.set()
-    await message.answer("Выберите соц сети:", reply_markup=markup)
-    # Вывести все соцсети пользователя и all для отправки во все соц сети
+    await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
+    media = types.InlineKeyboardMarkup()
+    _button = types.InlineKeyboardButton(text="inst", callback_data='instagram')
+    media.add(_button)
+    await message.answer('Подключенные социальные сети:', reply_markup=media, )
 
 
 @dp.message_handler(Text(equals="Настройки"), state=BotState.main)
