@@ -5,11 +5,18 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
 from loader import bot, dp
-from common.constants import USER, INVITE
+from common.constants import USER, INVITE, MONGO_DATA
 from database.mongodb.mongodriver import MongoDriver
 from common.db_user_format import USER_FORMAT
 
 logging.basicConfig(level=logging.INFO)
+
+
+def out_keyword_menu():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("Сделать пост")
+    markup.add("Настройки", "Выход")
+    return markup
 
 
 class BotState(StatesGroup):
@@ -21,14 +28,7 @@ class BotState(StatesGroup):
     end = State()  # state ending
 
 
-def out_keyword_menu():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    markup.add("Сделать пост")
-    markup.add("Настройки", "Выход")
-    return markup
-
-
-@dp.message_handler(commands=['start'], state=None)
+@dp.message_handler(commands=['start'], state='*')
 async def cmd_start(message: types.Message):
     user = types.User.get_current()
     markup = types.ReplyKeyboardRemove()
@@ -62,13 +62,40 @@ async def process_auth(message: types.Message):
 @dp.message_handler(Text(equals="Сделать пост"), state=BotState.main)
 async def add_post(message: types.Message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("Добавить")
     markup.add("Назад")
     await BotState.active.set()
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
     media = types.InlineKeyboardMarkup()
-    _button = types.InlineKeyboardButton(text="inst", callback_data='instagram')
-    media.add(_button)
-    await message.answer('Подключенные социальные сети:', reply_markup=media)
+    user = types.User.get_current()
+    user = db_user.get(USER.ID, user[USER.ID])
+    social_networks = dict(user[USER.SOCIAL_NET])
+    btns = list()
+    if social_networks is None:
+        await message.answer('У вас нет подключенных сетей')
+    else:
+        for net in social_networks:
+            btns.append(types.InlineKeyboardButton("{}".format(net), callback_data='{}'.format(net)))
+        media.add(*btns)
+        if len(social_networks) > 1:
+            media.add(types.InlineKeyboardButton("All", callback_data='all'))
+        await message.answer('Подключенные социальные сети:', reply_markup=media)
+
+
+@dp.message_handler(Text(equals="Добавить"), state=BotState.active)
+async def add_social_net(message: types.Message):
+    media = types.InlineKeyboardMarkup()
+    social_net = ['inst', 'vk', 'twitter']
+    btns = list()
+    for net in social_net:
+        btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='{}'.format(net)))
+    media.add(*btns)
+    await message.answer('Выберите какую социальную сеть подключить:', reply_markup=media)
+
+
+@dp.callback_query_handler(Text(equals='inst'), state=BotState.active)
+async def callback_button_media(message: types.Message):
+    await message.answer('Процесс добавления социальной сети для пользователя {}'.format(str(message.from_user.id)))
 
 
 @dp.message_handler(Text(equals="Настройки"), state=BotState.main)
@@ -103,6 +130,6 @@ async def go_back(message: types.Message):
 
 
 if __name__ == '__main__':
-    db_user = MongoDriver('posting_bot', 'users')
-    db_invite = MongoDriver('posting_bot', 'invite_keys')
+    db_user = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_USER)
+    db_invite = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_INVITE)
     executor.start_polling(dp, skip_updates=True)

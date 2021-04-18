@@ -19,6 +19,14 @@ class MongoDriver:
         except Exception as e:
             print(e)
 
+
+    def get(self, index=None, value=None):
+        try:
+            result = self.collection.find_one({index: value})
+            return result
+        except:
+            pass
+
     def pop(self, index=None, value=None):
         try:
             self.__prepare()
@@ -34,16 +42,8 @@ class MongoDriver:
         self.__prepare()
         return self.collection.find_one({index: value}) is not None
 
-    def is_empty(self):
-        self.__prepare()
-        return self.collection.find_one({}) is None
-
     def restart(self):
         self.__init(self.db_name, self.collection_name)
-
-    def find(self, request):
-        self.__prepare()
-        return self.collection.find(request, no_cursor_timeout=True)
 
     def __prepare(self):
         try:

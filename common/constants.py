@@ -1,3 +1,6 @@
+NONE = None
+
+
 class KEY:
     API = 'api_key'
 
@@ -23,4 +26,15 @@ class INVITE:
     INVITE_KEY = 'invite_key'
 
 
-NONE = None
+class SOCIAL_NETWORK:
+    INSTAGRAM = 'instagram'
+    VK = 'vk'
+    TWITTER = 'twitter'
+    YOUTUBE = 'youtube'
+    TELEGRAM = 'telegram'
+
+
+class MONGO_DATA:
+    DB_NAME = 'posting_bot'
+    DB_COLLECTION_USER = 'users'
+    DB_COLLECTION_INVITE = 'invite_keys'
