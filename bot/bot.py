@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
 from loader import bot, dp
-from common.constants import USER, INVITE, MONGO_DATA
+from common.constants import USER, INVITE, MONGO_DATA, SOCIAL_NETWORK
 from database.mongodb.mongodriver import MongoDriver
 from common.db_user_format import USER_FORMAT
 
@@ -66,7 +66,7 @@ async def add_post(message: types.Message):
     markup.add("Назад")
     await BotState.active.set()
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
-    media = types.InlineKeyboardMarkup()
+    media = types.InlineKeyboardMarkup(row_width=3)
     user = types.User.get_current()
     user = db_user.get(USER.ID, user[USER.ID])
     social_networks = dict(user[USER.SOCIAL_NET])
@@ -75,7 +75,7 @@ async def add_post(message: types.Message):
         await message.answer('У вас нет подключенных сетей')
     else:
         for net in social_networks:
-            btns.append(types.InlineKeyboardButton("{}".format(net), callback_data='{}'.format(net)))
+            btns.append(types.InlineKeyboardButton("{}".format(net), callback_data='post_{}'.format(net), ))
         media.add(*btns)
         if len(social_networks) > 1:
             media.add(types.InlineKeyboardButton("All", callback_data='all'))
@@ -84,18 +84,20 @@ async def add_post(message: types.Message):
 
 @dp.message_handler(Text(equals="Добавить"), state=BotState.active)
 async def add_social_net(message: types.Message):
-    media = types.InlineKeyboardMarkup()
-    social_net = ['inst', 'vk', 'twitter']
+    media = types.InlineKeyboardMarkup(row_width=3)
+    social_network = [SOCIAL_NETWORK.INSTAGRAM, SOCIAL_NETWORK.VK,
+                      SOCIAL_NETWORK.TWITTER, SOCIAL_NETWORK.TELEGRAM,
+                      SOCIAL_NETWORK.YOUTUBE]
     btns = list()
-    for net in social_net:
-        btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='{}'.format(net)))
+    for net in social_network:
+        btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
     media.add(*btns)
     await message.answer('Выберите какую социальную сеть подключить:', reply_markup=media)
 
 
-@dp.callback_query_handler(Text(equals='inst'), state=BotState.active)
+@dp.callback_query_handler(Text(equals='post_' + SOCIAL_NETWORK.INSTAGRAM), state=BotState.active)
 async def callback_button_media(message: types.Message):
-    await message.answer('Процесс добавления социальной сети для пользователя {}'.format(str(message.from_user.id)))
+    await message.answer('Процесс постинга в социальной сети {} '.format(SOCIAL_NETWORK.INSTAGRAM))
 
 
 @dp.message_handler(Text(equals="Настройки"), state=BotState.main)
