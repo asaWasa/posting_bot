@@ -4,12 +4,9 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
-from loader import bot, dp
-from common.constants import USER, INVITE, MONGO_DATA, SOCIAL_NETWORK
-from database.mongodb.mongodriver import MongoDriver
+from loader import bot, dp, db_user, db_invite
+from common.constants import USER, INVITE, SOCIAL_NETWORK
 from common.db_user_format import USER_FORMAT
-
-logging.basicConfig(level=logging.INFO)
 
 
 def out_keyword_menu():
@@ -71,7 +68,7 @@ async def add_post(message: types.Message):
     user = db_user.get(USER.ID, user[USER.ID])
     social_networks = dict(user[USER.SOCIAL_NET])
     btns = list()
-    if social_networks is None:
+    if social_networks is None or social_networks == {}:
         await message.answer('У вас нет подключенных сетей')
     else:
         for net in social_networks:
@@ -95,9 +92,14 @@ async def add_social_net(message: types.Message):
     await message.answer('Выберите какую социальную сеть подключить:', reply_markup=media)
 
 
-@dp.callback_query_handler(Text(equals='post_' + SOCIAL_NETWORK.INSTAGRAM), state=BotState.active)
-async def callback_button_media(message: types.Message):
-    await message.answer('Процесс постинга в социальной сети {} '.format(SOCIAL_NETWORK.INSTAGRAM))
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORK.INSTAGRAM), state=BotState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Процесс добавления социальной сети {} '.format(SOCIAL_NETWORK.INSTAGRAM))
+
+
+# @dp.callback_query_handler(Text(equals='post_' + SOCIAL_NETWORK.INSTAGRAM), state=BotState.active)
+# async def callback_button_media(message: types.Message):
+#     await message.answer('Процесс постинга в социальной сети {} '.format(SOCIAL_NETWORK.INSTAGRAM))
 
 
 @dp.message_handler(Text(equals="Настройки"), state=BotState.main)
@@ -132,6 +134,4 @@ async def go_back(message: types.Message):
 
 
 if __name__ == '__main__':
-    db_user = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_USER)
-    db_invite = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_INVITE)
     executor.start_polling(dp, skip_updates=True)

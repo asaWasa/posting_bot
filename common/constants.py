@@ -38,3 +38,7 @@ class MONGO_DATA:
     DB_NAME = 'posting_bot'
     DB_COLLECTION_USER = 'users'
     DB_COLLECTION_INVITE = 'invite_keys'
+
+
+class API:
+    INSTAGRAM_MAIN_REQUEST = "https://graph.facebook.com/"
