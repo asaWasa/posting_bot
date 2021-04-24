@@ -40,5 +40,6 @@ class MONGO_DATA:
     DB_COLLECTION_INVITE = 'invite_keys'
 
 
-class API:
-    INSTAGRAM_MAIN_REQUEST = "https://graph.facebook.com/"
+class INSTAGRAM:
+    MAIN_REQUEST_API = "https://graph.facebook.com/"
+    MAIN_PAGE_BROWSER = "https://business.facebook.com/creatorstudio/home"

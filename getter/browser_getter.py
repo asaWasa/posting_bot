@@ -3,10 +3,8 @@ from bs4 import BeautifulSoup
 
 
 class BrowserGetter:
-    def __init__(self, authorization=None):
+    def __init__(self):
         self.browser = Browser(headless=False)
-        if authorization is not None:
-            self.auth = authorization(self.browser)
 
     def get_page(self, page=None):
         try:
