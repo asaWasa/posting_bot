@@ -54,3 +54,6 @@ class Browser:
     def restart(self):
         self.free()
         self.init(self.headless)
+
+    def switch_window(self, n_window):
+        self.driver.switch_to.window(self.driver.window_handles[n_window])

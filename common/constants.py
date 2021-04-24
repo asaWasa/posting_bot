@@ -42,4 +42,4 @@ class MONGO_DATA:
 
 class INSTAGRAM:
     MAIN_REQUEST_API = "https://graph.facebook.com/"
-    MAIN_PAGE_BROWSER = "https://business.facebook.com/creatorstudio/home"
+    MAIN_PAGE_BROWSER = "https://business.facebook.com/creatorstudio/?tab=instagram_content_posts"
