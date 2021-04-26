@@ -13,7 +13,7 @@ class Browser:
 
     def init(self, headless=False):
         option = webdriver.ChromeOptions()
-
+        #
         chrome_prefs = dict()
         chrome_prefs["profile.default_content_settings"] = {"images": 2}
         chrome_prefs["profile.managed_default_content_settings"] = {"images": 2}
@@ -27,7 +27,6 @@ class Browser:
 
         if headless:
             option.add_argument('--headless')
-            option.add_argument('--disable-gpu')
 
         self.driver = webdriver.Chrome(chrome_options=option)
 
