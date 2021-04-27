@@ -7,5 +7,5 @@ class QueueManager:
     def start_manager(self):
         flag = True
         while flag:
-            if self.manager_queue.is_empty():
+            if not self.manager_queue.is_empty():
                 pass
