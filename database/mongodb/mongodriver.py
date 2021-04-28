@@ -19,13 +19,19 @@ class MongoDriver:
         except Exception as e:
             print(e)
 
-
     def get(self, index=None, value=None):
         try:
             result = self.collection.find_one({index: value})
             return result
         except:
             pass
+
+    def update_id(self, index, id_, data):
+        try:
+            self.__prepare()
+            self.collection.update({index: id_}, {'$set': data}, upsert=True)
+        except Exception as e:
+            print(e)
 
     def pop(self, index=None, value=None):
         try:
@@ -35,8 +41,8 @@ class MongoDriver:
             else:
                 result = self.collection.find_one_and_delete({index: value})
             return result
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     def is_in(self, index=None, value=None):
         self.__prepare()
@@ -48,5 +54,6 @@ class MongoDriver:
     def __prepare(self):
         try:
             self.client.server_info()
-        except:
+        except Exception as e:
+            print(e)
             self.restart()

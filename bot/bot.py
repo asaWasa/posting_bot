@@ -134,6 +134,7 @@ async def add_password(message: types.Message, state: FSMContext):
         user = types.User.get_current()
         user = db_user.get(USER.ID, user[USER.ID])
         user[USER.SOCIAL_NET][name] = {'login': login, 'password': password}
+        db_user.update_id(USER.ID, user[USER.ID], user)
         await BotMainState.main.set()
         markup = out_keyword_menu()
         await message.answer("Выберите действие", reply_markup=markup)
