@@ -64,6 +64,7 @@ async def process_auth(message: types.Message):
 async def add_post(message: types.Message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add("Добавить")
+    markup.add('Удалить')
     markup.add("Назад")
     await BotMainState.active.set()
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
@@ -86,9 +87,7 @@ async def add_post(message: types.Message):
 @dp.message_handler(Text(equals="Добавить"), state=BotMainState.active)
 async def add_social_net(message: types.Message):
     media = types.InlineKeyboardMarkup(row_width=3)
-    social_network = [SOCIAL_NETWORK.INSTAGRAM, SOCIAL_NETWORK.VK,
-                      SOCIAL_NETWORK.TWITTER, SOCIAL_NETWORK.TELEGRAM,
-                      SOCIAL_NETWORK.YOUTUBE]
+    social_network = [SOCIAL_NETWORK.INSTAGRAM]
     btns = list()
     for net in social_network:
         btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
@@ -130,7 +129,6 @@ async def add_password(message: types.Message, state: FSMContext):
         async with state.proxy() as social_net:
             name = social_net['name']
             login = social_net['login']
-        await message.answer('Ваши данные для - {} логин-{} пароль - {}'.format(name, login, password))
         user = types.User.get_current()
         user = db_user.get(USER.ID, user[USER.ID])
         user[USER.SOCIAL_NET][name] = {'login': login, 'password': password}

@@ -31,7 +31,7 @@ class MongoDriver:
             self.__prepare()
             self.collection.update({index: id_}, {'$set': data}, upsert=True)
         except Exception as e:
-            print(e)
+            print(str(e) + str(2))
 
     def pop(self, index=None, value=None):
         try:
@@ -54,6 +54,5 @@ class MongoDriver:
     def __prepare(self):
         try:
             self.client.server_info()
-        except Exception as e:
-            print(e)
+        except:
             self.restart()

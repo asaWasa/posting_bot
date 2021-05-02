@@ -61,7 +61,7 @@ class BrowserInstagram:
         self.driver = self.getter.driver
         make_post = self.driver.find_element_by_class_name('k6xjwoyg')
         make_post.click()
-        tape_inst = self.driver.find_element_by_id('js_2r')
+        tape_inst = self.driver.find_element_by_xpath('//*[@id="facebook"]/body/div[3]/div[1]/div[1]/div/div/div[1]/div[2]/div/div[1]/div/div/div')
         tape_inst.click()
         sleep(4)
 
@@ -147,7 +147,7 @@ class BrowserInstagram:
 
 
 inst = BrowserInstagram({'login': 'doncov-danil@mail.ru',
-                         'password': 'iKtKjxqaQ2GJu7t'}, BrowserGetter())
+                         'password': 'ZEg-5q6-6e7-Acx'}, BrowserGetter())
 inst.make_post({'image': '/home/mecing/Desktop/Project/posting_bot/posting_tools/instagram/instagram_browser/1.jpg',
                 'caption': 'test',
                 'time': 15,

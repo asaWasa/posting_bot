@@ -5,7 +5,13 @@ class QueueManager:
         self.manager_queue = manager_queue
 
     def start_manager(self):
-        flag = True
-        while flag:
-            if not self.manager_queue.is_empty():
-                pass
+        try:
+            flag = True
+            while flag:
+                if not self.manager_queue.is_empty():
+                    self.__processing_request(self.manager_queue.pop())
+        except Exception as e:
+            print(e)
+
+    def __processing_request(self, request):
+        pass
