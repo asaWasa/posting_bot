@@ -3,8 +3,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
-from loader import dp, db_user, db_invite
-from common.constants import USER, INVITE, SOCIAL_NETWORK
+from loader import dp, db_user_data, db_invite
+from common.constants import USER_DATA, INVITE, SOCIAL_NETWORK
 from common.db_user_format import USER_FORMAT
 
 
@@ -33,7 +33,7 @@ class BotAddSocialState(StatesGroup):
 async def cmd_start(message: types.Message):
     user = types.User.get_current()
     markup = types.ReplyKeyboardRemove()
-    if db_user.is_in(USER.ID, user[USER.ID]):
+    if db_user_data.is_in(USER_DATA.ID, user[USER_DATA.ID]):
         await BotMainState.main.set()
         await message.answer("Снова здравствуйте!", reply_markup=markup)
         markup = out_keyword_menu()
@@ -50,7 +50,7 @@ async def cmd_start(message: types.Message):
 async def process_auth(message: types.Message):
     if db_invite.is_in(INVITE.INVITE_KEY, str(message.text)):
         user_data = USER_FORMAT(types.User.get_current())
-        db_user.push(user_data.to_dict())
+        db_user_data.push(user_data.to_dict())
         await BotMainState.main.set()
         await message.answer("Успешный вход, добро пожаловать!")
         markup = out_keyword_menu()
@@ -70,8 +70,8 @@ async def add_post(message: types.Message):
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
     media = types.InlineKeyboardMarkup(row_width=3)
     user = types.User.get_current()
-    user = db_user.get(USER.ID, user[USER.ID])
-    social_networks = dict(user[USER.SOCIAL_NET])
+    user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+    social_networks = dict(user[USER_DATA.SOCIAL_NET])
     btns = list()
     if social_networks is None or social_networks == {}:
         await message.answer('У вас нет подключенных сетей')
@@ -130,9 +130,9 @@ async def add_password(message: types.Message, state: FSMContext):
             name = social_net['name']
             login = social_net['login']
         user = types.User.get_current()
-        user = db_user.get(USER.ID, user[USER.ID])
-        user[USER.SOCIAL_NET][name] = {'login': login, 'password': password}
-        db_user.update_id(USER.ID, user[USER.ID], user)
+        user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+        user[USER_DATA.SOCIAL_NET][name] = {'login': login, 'password': password}
+        db_user_data.update_id(USER_DATA.ID, user[USER_DATA.ID], user)
         await BotMainState.main.set()
         markup = out_keyword_menu()
         await message.answer("Выберите действие", reply_markup=markup)

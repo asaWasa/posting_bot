@@ -18,8 +18,9 @@ storage = MemoryStorage()  # использует оперативную пам�
 dp = Dispatcher(bot, storage=storage)
 
 # пользователи
-db_user = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_USER)
+db_user_data = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_USER)
 
 # приглашения
 db_invite = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_INVITE)
 
+db_user_request = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_REQUEST)

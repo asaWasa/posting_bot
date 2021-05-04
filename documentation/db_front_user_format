@@ -1,0 +1,15 @@
+Format for user requests to the app
+{
+    'id':'12345677',
+    'type_request':'POST_IMAGE'
+                   'POST_VIDEO'
+                   '..........'
+    'data':{
+                'image':'https//...',
+                'caption':'text',
+                'delay': 10,  # int delay in minute before publishing
+            },
+    'date_creation': '2021-05-04 04:47:37.047029'
+}
+
+

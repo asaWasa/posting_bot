@@ -1,4 +1,4 @@
-from common.constants import USER, RIGHT, NONE
+from common.constants import USER_DATA, RIGHT, NONE
 
 
 class USER_FORMAT:
@@ -7,13 +7,13 @@ class USER_FORMAT:
 
     def to_dict(self):
         result = dict()
-        result[USER.TIME] = 0
-        result[USER.ID] = self.data[USER.ID]
-        result[USER.IS_BOT] = self.data[USER.IS_BOT]
-        result[USER.FIRST_NAME] = self.data[USER.FIRST_NAME]
-        result[USER.USERNAME] = self.data[USER.USERNAME]
-        result[USER.LANGUAGE_CODE] = self.data[USER.LANGUAGE_CODE]
-        result[USER.ADMIN_RULE] = RIGHT.USER
-        result[USER.SOCIAL_NET] = NONE
+        result[USER_DATA.TIME] = 0
+        result[USER_DATA.ID] = self.data[USER_DATA.ID]
+        result[USER_DATA.IS_BOT] = self.data[USER_DATA.IS_BOT]
+        result[USER_DATA.FIRST_NAME] = self.data[USER_DATA.FIRST_NAME]
+        result[USER_DATA.USERNAME] = self.data[USER_DATA.USERNAME]
+        result[USER_DATA.LANGUAGE_CODE] = self.data[USER_DATA.LANGUAGE_CODE]
+        result[USER_DATA.ADMIN_RULE] = RIGHT.USER
+        result[USER_DATA.SOCIAL_NET] = NONE
 
         return result
