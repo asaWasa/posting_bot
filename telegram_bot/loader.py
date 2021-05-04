@@ -2,14 +2,14 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from database.mongodb.mongodriver import MongoDriver
 from common.config import api_key
-from common.constants import KEY, MONGO_DATA
+from common.constants import Key, MongoData
 import logging
 
 # логгирование
 logging.basicConfig(level=logging.INFO)
 
 # бот
-bot = Bot(token=api_key[KEY.API])
+bot = Bot(token=api_key[Key.Api])
 
 # хранилище состояний
 storage = MemoryStorage()  # использует оперативную память
@@ -18,9 +18,9 @@ storage = MemoryStorage()  # использует оперативную пам�
 dp = Dispatcher(bot, storage=storage)
 
 # пользователи
-db_user_data = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_USER)
+db_user_data = MongoDriver(MongoData.db_main, MongoData.db_collection_user)
 
 # приглашения
-db_invite = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_INVITE)
+db_invite = MongoDriver(MongoData.db_main, MongoData.db_collection_invite)
 
-db_user_request = MongoDriver(MONGO_DATA.DB_NAME, MONGO_DATA.DB_COLLECTION_REQUEST)
+db_user_request = MongoDriver(MongoData.db_main, MongoData.db_collection_requests)

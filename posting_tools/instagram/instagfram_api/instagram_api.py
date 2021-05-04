@@ -1,54 +1,144 @@
+from time import sleep
 import requests
 import json
+from common.constants import RequestType
+from common.errors import *
 
 
-class ApiInstagram:
-    def __init__(self, user_data_object):
-        self.business_id = user_data_object["instagram_business_id"]
-        self.user_access_token = self.__get_user_access_tocen(user_data_object)
+class InstagramApi:
+    def __init__(self, user_object):
+        self.params = self.__get_user_param(user_object)
 
-    def __get_user_access_tocen(self, user_data_object):
-        return user_data_object["user_access_token"]
+    def __get_user_param(self, user_object):
+        user_data = self.__get_user_data(user_object)
+        user_param = dict()
+        user_param['access_token'] = user_data['access_token']
+        user_param['endpoint_base'] = 'https://graph.facebook.com/v10.0/'
+        user_param['instagram_account_id'] = user_data['instagram_account_id']
+        return user_param
 
-    def make_post(self, image, caption):
-        image = self.__convert_image_to_jpg(image)
-        raw_json_creation_id = self.__create_media_object(image, caption)
-        creation_id = self.__clear_id(raw_json_creation_id)
-        stat = self.__publishing_media_object(creation_id)
-        print(stat.text)
+    def __api_call(self, url, endpoint_data, type):
+        if type == RequestType.POST:
+            data = requests.post(url, endpoint_data)
+        else:
+            data = requests.get(url, endpoint_data)
 
-    def __convert_image_to_jpg(self, image):
-        return image
+        response = dict()
+        response['url'] = url
+        response['endpoint_params'] = endpoint_data
+        response['endpoint_params_pretty'] = json.dumps(endpoint_data, indent=4)
+        response['json_data'] = json.loads(data.content)
+        response['json_data_pretty'] = json.dumps(response['json_data'], indent=4)
+        return response
 
-    def __clear_caption(self, caption):
-        return caption
+    def __get_user_data(self, user_object):
+        """получить данные пользователя из базы данных и выдать"""
+        user_data = dict()
+        user_data['access_token'] = user_object['access_token']
+        user_data['instagram_account_id'] = user_object['instagram_account_id']
+        return user_data
 
-    def __create_media_object(self, image, caption, location=None, date=None):
-        req = "https://graph.facebook.com/v10.0/{}/media".format(self.business_id)
-        data = {
-            "image_url": image,
-            "caption": caption,
-            "access_token": self.user_access_token
-        }
-        creation_id = requests.post(req, data=data)
-        return creation_id.text
-
-    def __publishing_media_object(self, creation_id):
-        req = "https://graph.facebook.com/{}/media_publish".format(self.business_id)
-        data = {
-            "creation_id": creation_id,
-            'access_token': self.user_access_token
-        }
-        stat = requests.post(req, data=data)
-        return stat
-
-    def __clear_id(self, raw_json_creation_id):
+    def make_post(self, user_request, delay=5):
         try:
-            return json.loads(raw_json_creation_id)
+            """создать медиа объект"""
+            media_response = self.__create_media(user_request['image'], user_request['caption'])
+            media_id = media_response['data']['json_data']
+            while media_response['status'] != 'FINISHED':
+                status_media_object = self.get_status_media_object(media_id)
+                media_response['status'] = status_media_object
+                print("---- IMAGE MEDIA OBJECT STATUS -----")
+                print("     Status Code:")
+                print("     " + media_response['status'])
+                sleep(delay)
+            """Опубликовать медиа объект"""
+            response_media_object = self.__posting_media(media_id)
+            posting_limit = self.get_limit_posting_content()
+            print("---- POSTING MEDIA OBJECT STATUS -----")
+            print("     ID:")
+            print("     " + str(response_media_object['json_data']))
+            print("     POSTING LIMIT USAGE:")
+            print("     " + str(posting_limit['json_data']))
+            return response_media_object, posting_limit
+
+        except NoValidToken:
+            #todo вернуть запрос в базу
+            pass
+        except BadImage:
+            # todo вернуть запрос в базу
+            pass
+        except BadCaption:
+            # todo вернуть запрос в базу
+            pass
         except Exception as e:
-            print('Ошибка очистки "creation id" {}'.format(e))
+            # todo вернуть запрос в базу
+            print('error - {}'.format(e))
+            pass
+
+    def __create_media(self, image, caption, type_media='img'):
+        try:
+            url = self.params['endpoint_base'] + self.params['instagram_account_id'] + '/media'
+            endpoint_data = dict()
+            endpoint_data['caption'] = caption
+            endpoint_data['access_token'] = self.params['access_token']
+            if type_media == 'img':
+                endpoint_data['image_url'] = image
+            else:
+                endpoint_data['media_type'] = "VIDEO"
+                endpoint_data['video_url'] = self.params['media_url']
+            response = {'data': self.__api_call(url, endpoint_data, 'POST'),
+                        'status': 'IN_PROGRESS'}
+            self.__check_response_errors(response)
+            return response
+        except NoValidToken:
+            print('---------------ERROR TOKEN---------------')
+            raise NoValidToken
+        except BadImage:
+            print('---------------ERROR IMAGE---------------')
+            raise BadImage
+        except BadCaption:
+            print('---------------ERROR CAPTION---------------')
+            raise BadCaption
+        except Exception as e:
+            print('error media - {}'.format(e))
+            raise e
+
+    def __check_response_errors(self, data):
+        try:
+            data = data['data']['json_data']['error']
+            subcode = data['error_subcode']
+            if subcode == 463:
+                raise NoValidToken
+        except NoValidToken:
+            raise NoValidToken
+        except:
+            pass
+
+    def get_status_media_object(self, created_object_id):
+        _id = created_object_id['id']
+        url = self.params['endpoint_base'] + '/' + _id
+        endpoint_data = dict()
+        endpoint_data['fields'] = 'status_code'
+        endpoint_data['access_token'] = self.params['access_token']
+        response = self.__api_call(url, endpoint_data, 'GET')
+        return response['json_data']['status_code']
+
+    def __posting_media(self, created_object_id):
+        url = self.params['endpoint_base'] + self.params['instagram_account_id'] + '/media_publish'
+        endpoint_data = dict()
+        endpoint_data['creation_id'] = created_object_id['id']
+        endpoint_data['access_token'] = self.params['access_token']
+        return self.__api_call(url, endpoint_data, 'POST')
+
+    def get_limit_posting_content(self):
+        url = self.params['endpoint_base'] + self.params['instagram_account_id'] + '/content_publishing_limit'
+        endpoint_data = dict()
+        endpoint_data['fields'] = 'config,quota_usage'
+        endpoint_data['access_token'] = self.params['access_token']
+        return self.__api_call(url, endpoint_data, 'GET')
 
 
-api = ApiInstagram({'instagram_business_id': '17841403220449260',
-                    'user_access_token': "EAAGpsNw9iWoBAGVGDhra6AZBGu99cmaxc3g3BvrJOanp2HIb3FgOb4lqrCQLGYs2Oe0uECxl4zrrZBIjejsMmPuo2OeyiZA6XUTlJaTyXZBk0MwJETso44GC5YDQHwmZBZCeJfO0t0VsiLUtOWlP7Bnpf05MjfStj1SHpF8VXU4TbuT2SXox0z3dpDkcIJiqKlBgrTTOK7ZCyKiQahEKMXY58jBJw22I34QlnWjrOckQJo1fstDtPZAx2xnEIJOQrG4ZD"})
-api.make_post('1.jpg', 'test')
+api = InstagramApi({'instagram_account_id': '17841403220449260',
+                    'access_token': 'EAAGpsNw9iWoBANRukZBWRBkXLUOsZBqa95BdYy0mqVvfmUSU29tfQRYVgcesZCcZAZCIf0uZA0BNHZCsUth5kdSvUL7LAKuZAuaIhsQImei2lycWnmsvnnIl8FqGE6Df04kXelQTjoXd0Kl2DZBEMUQs9RrsAVGjhNMZB37rnTaAFFKmexLP14fkfbWr02qILuPI148JhXSLphLrwD6UvgkuZB6yxZBxHo6tDciYCv6yYMq2vERQagqlj5e2JoOM2nOF3QcZD'})
+
+api.make_post({'image': 'https://api.telegram.org/file/bot1709642482:AAHXAnZ8UBCMeEDuEikCqYBFhkA8MDN7rNk/photos/file_0.jpg',
+               'caption': 'o'})

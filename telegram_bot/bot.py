@@ -4,7 +4,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
 from loader import dp, db_user_data, db_invite
-from common.constants import USER_DATA, INVITE, SOCIAL_NETWORK
+from common.constants import UserData, Invite, SocialNetwork
 from common.db_user_format import USER_FORMAT
 
 
@@ -29,11 +29,16 @@ class BotAddSocialState(StatesGroup):
     password = State()
 
 
+class BotAddPostState(StatesGroup):
+    get_image = State()
+    get_caption = State()
+
+
 @dp.message_handler(commands=['start'], state='*')
 async def cmd_start(message: types.Message):
     user = types.User.get_current()
     markup = types.ReplyKeyboardRemove()
-    if db_user_data.is_in(USER_DATA.ID, user[USER_DATA.ID]):
+    if db_user_data.is_in(UserData.Id, user[UserData.Id]):
         await BotMainState.main.set()
         await message.answer("Снова здравствуйте!", reply_markup=markup)
         markup = out_keyword_menu()
@@ -48,7 +53,7 @@ async def cmd_start(message: types.Message):
 
 @dp.message_handler(state=BotMainState.auth)
 async def process_auth(message: types.Message):
-    if db_invite.is_in(INVITE.INVITE_KEY, str(message.text)):
+    if db_invite.is_in(Invite.Invite_key, str(message.text)):
         user_data = USER_FORMAT(types.User.get_current())
         db_user_data.push(user_data.to_dict())
         await BotMainState.main.set()
@@ -70,8 +75,8 @@ async def add_post(message: types.Message):
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
     media = types.InlineKeyboardMarkup(row_width=3)
     user = types.User.get_current()
-    user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
-    social_networks = dict(user[USER_DATA.SOCIAL_NET])
+    user = db_user_data.get(UserData.Id, user[UserData.Id])
+    social_networks = user[UserData.Social_net]
     btns = list()
     if social_networks is None or social_networks == {}:
         await message.answer('У вас нет подключенных сетей')
@@ -87,7 +92,7 @@ async def add_post(message: types.Message):
 @dp.message_handler(Text(equals="Добавить"), state=BotMainState.active)
 async def add_social_net(message: types.Message):
     media = types.InlineKeyboardMarkup(row_width=3)
-    social_network = [SOCIAL_NETWORK.INSTAGRAM]
+    social_network = [SocialNetwork.Instagram, SocialNetwork.Vk, SocialNetwork.YouTube]
     btns = list()
     for net in social_network:
         btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
@@ -95,29 +100,39 @@ async def add_social_net(message: types.Message):
     await message.answer('Выберите какую социальную сеть подключить:', reply_markup=media)
 
 
-@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORK.INSTAGRAM), state=BotMainState.active)
+@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Instagram), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     await query.message.answer('Процесс добавления социальной сети {} введите данные аккаунта'
-                               .format(SOCIAL_NETWORK.INSTAGRAM))
-    await state.update_data(name=SOCIAL_NETWORK.INSTAGRAM)
+                               .format(SocialNetwork.Instagram))
+    await state.update_data(name=SocialNetwork.Instagram)
     await BotAddSocialState.login.set()
-    await query.message.answer('Введите логин:', reply_markup=types.ReplyKeyboardRemove())
+    await query.message.answer('Введите business id :', reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Vk), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.YouTube), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(state=BotAddSocialState.login)
 async def add_login(message: types.Message, state: FSMContext):
     login = message.text
     try:
-        __check_login(login)
+        __check_business_id(login)
         async with state.proxy() as social_net:
-            social_net['login'] = login
+            social_net['business_id'] = login
         await BotAddSocialState.password.set()
-        await message.answer('Введите пароль:')
+        await message.answer('Введите token:')
     except:
-        await message.answer('Такой логин невозможен')
+        await message.answer('Такой business id невозможен')
 
 
-def __check_login(login):
+def __check_business_id(business_id):
     pass
 
 
@@ -125,31 +140,35 @@ def __check_login(login):
 async def add_password(message: types.Message, state: FSMContext):
     password = message.text
     try:
-        __check_password(password)
+        __check_token(password)
         async with state.proxy() as social_net:
             name = social_net['name']
-            login = social_net['login']
+            login = social_net['business_id']
         user = types.User.get_current()
-        user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
-        user[USER_DATA.SOCIAL_NET][name] = {'login': login, 'password': password}
-        db_user_data.update_id(USER_DATA.ID, user[USER_DATA.ID], user)
+        user = db_user_data.get(UserData.Id, user[UserData.Id])
+        user[UserData.Social_net][name] = {'business_id': login, 'token': password}
+        db_user_data.update_id(UserData.Id, user[UserData.Id], user)
         await BotMainState.main.set()
         markup = out_keyword_menu()
         await message.answer("Выберите действие", reply_markup=markup)
-    except:
-        await message.answer('Такой пароль невозможен')
+    except Exception as e:
+        await message.answer('Такой token невозможен')
 
 
-def __check_password(password):
+def __check_token(token):
     pass
 
-# def __add_in_user_social_net(user, social_net, key):
-#     if user[key]:
-#         user[key]
 
-# @dp.callback_query_handler(Text(equals='post_' + SOCIAL_NETWORK.INSTAGRAM), state=BotState.active)
-# async def callback_button_media(message: types.Message):
-#     await message.answer('Процесс постинга в социальной сети {} '.format(SOCIAL_NETWORK.INSTAGRAM))
+@dp.callback_query_handler(Text(equals='post_' + SocialNetwork.Instagram), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Отправте изображение:', reply_markup=types.ReplyKeyboardRemove())
+    await BotAddPostState.get_image.set()
+
+
+@dp.message_handler(content_types=['photo'], state=BotAddPostState.get_image)
+async def handle_docs_photo(message):
+    await message.photo[-1].download('test.jpg')
+    await message.answer('получил - {}'.format(message.photo[-1].file_id))
 
 
 @dp.message_handler(Text(equals="Настройки"), state=BotMainState.main)

@@ -1,4 +1,4 @@
-from common.constants import INSTAGRAM
+from common.constants import Instagram
 from getter.browser_getter import BrowserGetter
 from time import sleep
 from selenium.webdriver.common.keys import Keys
@@ -20,7 +20,7 @@ class BrowserInstagram:
         self.page = self.browser_getter.get_page(url)
 
     def make_post(self, user_queue_object):
-        self.__get_page(INSTAGRAM.MAIN_PAGE_BROWSER)
+        self.__get_page(Instagram.MAIN_PAGE_BROWSER)
         self.__proc_authorization()
         self.__get_page()
         self.__click_make_post()

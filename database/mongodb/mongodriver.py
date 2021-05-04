@@ -23,8 +23,13 @@ class MongoDriver:
         try:
             result = self.collection.find_one({index: value})
             return result
-        except:
+        except Exception as e:
+            print(e)
             pass
+
+    def is_empty(self):
+        self.__prepare()
+        return self.collection.find_one({}) is None
 
     def update_id(self, index, id_, data):
         try:
