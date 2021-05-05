@@ -1,7 +1,7 @@
 from common.constants import UserData, Rights, NONE
 
 
-class USER_FORMAT:
+class UserFormat:
     def __init__(self, data):
         self.data = dict(data)
 

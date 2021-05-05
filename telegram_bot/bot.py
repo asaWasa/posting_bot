@@ -5,7 +5,8 @@ from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
 from loader import dp, db_user_data, db_invite
 from common.constants import UserData, Invite, SocialNetwork
-from common.db_user_format import USER_FORMAT
+from common.db_user_format import UserFormat
+from posting_tools.tmp_photo import photo_path
 
 
 def out_keyword_menu():
@@ -54,7 +55,7 @@ async def cmd_start(message: types.Message):
 @dp.message_handler(state=BotMainState.auth)
 async def process_auth(message: types.Message):
     if db_invite.is_in(Invite.Invite_key, str(message.text)):
-        user_data = USER_FORMAT(types.User.get_current())
+        user_data = UserFormat(types.User.get_current())
         db_user_data.push(user_data.to_dict())
         await BotMainState.main.set()
         await message.answer("Успешный вход, добро пожаловать!")
@@ -160,14 +161,18 @@ def __check_token(token):
 
 
 @dp.callback_query_handler(Text(equals='post_' + SocialNetwork.Instagram), state=BotMainState.active)
-async def callback_button_media(query: types.CallbackQuery):
+async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
+    async with state.proxy() as social_net:
+        social_net['name'] = SocialNetwork.Instagram
     await query.message.answer('Отправте изображение:', reply_markup=types.ReplyKeyboardRemove())
     await BotAddPostState.get_image.set()
 
 
 @dp.message_handler(content_types=['photo'], state=BotAddPostState.get_image)
-async def handle_docs_photo(message):
-    await message.photo[-1].download('test.jpg')
+async def handle_docs_photo(message, state: FSMContext):
+    async with state.proxy() as social_net:
+        name = social_net['name']
+    await message.photo[-1].download(photo_path.get_filepath() + '/' + 'id{}_userid{}_name{}.jpg'.format(message.from_user.id))
     await message.answer('получил - {}'.format(message.photo[-1].file_id))
 
 

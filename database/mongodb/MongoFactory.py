@@ -1,4 +1,4 @@
-from mongodriver import MongoDriver
+from database.mongodb.mongodriver import MongoDriver
 
 
 class MongoFactory:

@@ -27,6 +27,10 @@ class MongoDriver:
             print(e)
             pass
 
+    def get_last_item(self, param='id_request'):
+        self.__prepare()
+        return dict(list(self.collection.find().sort(param, -1).limit(1))[0])
+
     def is_empty(self):
         self.__prepare()
         return self.collection.find_one({}) is None

@@ -40,7 +40,7 @@ class MongoData:
 
     db_collection_user = 'users'
     db_collection_invite = 'invite_keys'
-    db_collection_requests = 'requests'
+    db_collection_requests = 'users_requests'
     db_collection_main_queue = 'main_queue'
 
 

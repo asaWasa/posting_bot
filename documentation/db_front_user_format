@@ -1,6 +1,7 @@
 Format for user requests to the app
 {
-    'id':'12345677',
+    'id_request': '123123'
+    'user_id':'12345677',
     'type_request':'POST_IMAGE'
                    'POST_VIDEO'
                    '..........'
