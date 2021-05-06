@@ -16,6 +16,19 @@ class UserData:
     Time = 'time'
 
 
+class UserRequest:
+    Id_request = 'id_request'
+    User_id = 'user_id'
+    Type_request = 'type_request'
+    Data = 'data'
+    Date_creation = 'date_creation'
+
+
+class TypeRequest:
+    Post_image = 'POST_IMAGE'
+    Post_video = 'POST_VIDEO'
+
+
 class Rights:
     User = 0
     Moderator = 1

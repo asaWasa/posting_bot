@@ -3,17 +3,33 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
-from loader import dp, db_user_data, db_invite
-from common.constants import UserData, Invite, SocialNetwork
-from common.db_user_format import UserFormat
+from loader import dp, db_user_data, db_invite, db_user_request
+from common.constants import UserData, UserRequest, Invite, SocialNetwork, TypeRequest
+from database.db_format.user_data import UserDataFormat
+from database.db_format.user_request import UserRequestFormat
 from posting_tools.tmp_photo import photo_path
-
+from posting_tools.telegram.telegram_api import get_photo_path
 
 def out_keyword_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add("Сделать пост")
     markup.add("Настройки", "Выход")
     return markup
+
+
+def get_id(request_table, param_for_search='id_request'):
+    try:
+        return int(request_table.get_last_item(param_for_search)[param_for_search]) + 1
+    except:
+        return 0
+
+
+def __check_photo(photo):
+    pass
+
+
+def __check_caption(caption):
+    pass
 
 
 class BotMainState(StatesGroup):
@@ -25,14 +41,14 @@ class BotMainState(StatesGroup):
     end = State()  # state ending
 
 
+# todo можно переделать в одно состояние и добавить его к основным состояниям
 class BotAddSocialState(StatesGroup):
-    login = State()
-    password = State()
+    business_id = State()  # state for input facebook business_id
+    token = State()  # state for input facebook token
 
 
 class BotAddPostState(StatesGroup):
-    get_image = State()
-    get_caption = State()
+    post_processing = State()
 
 
 @dp.message_handler(commands=['start'], state='*')
@@ -55,7 +71,7 @@ async def cmd_start(message: types.Message):
 @dp.message_handler(state=BotMainState.auth)
 async def process_auth(message: types.Message):
     if db_invite.is_in(Invite.Invite_key, str(message.text)):
-        user_data = UserFormat(types.User.get_current())
+        user_data = UserDataFormat(types.User.get_current())
         db_user_data.push(user_data.to_dict())
         await BotMainState.main.set()
         await message.answer("Успешный вход, добро пожаловать!")
@@ -106,7 +122,7 @@ async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     await query.message.answer('Процесс добавления социальной сети {} введите данные аккаунта'
                                .format(SocialNetwork.Instagram))
     await state.update_data(name=SocialNetwork.Instagram)
-    await BotAddSocialState.login.set()
+    await BotAddSocialState.business_id.set()
     await query.message.answer('Введите business id :', reply_markup=types.ReplyKeyboardRemove())
 
 
@@ -120,14 +136,14 @@ async def callback_button_media(query: types.CallbackQuery):
     await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(state=BotAddSocialState.login)
+@dp.message_handler(state=BotAddSocialState.business_id)
 async def add_login(message: types.Message, state: FSMContext):
     login = message.text
     try:
         __check_business_id(login)
         async with state.proxy() as social_net:
             social_net['business_id'] = login
-        await BotAddSocialState.password.set()
+        await BotAddSocialState.token.set()
         await message.answer('Введите token:')
     except:
         await message.answer('Такой business id невозможен')
@@ -137,7 +153,7 @@ def __check_business_id(business_id):
     pass
 
 
-@dp.message_handler(state=BotAddSocialState.password)
+@dp.message_handler(state=BotAddSocialState.token)
 async def add_password(message: types.Message, state: FSMContext):
     password = message.text
     try:
@@ -165,15 +181,39 @@ async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as social_net:
         social_net['name'] = SocialNetwork.Instagram
     await query.message.answer('Отправте изображение:', reply_markup=types.ReplyKeyboardRemove())
-    await BotAddPostState.get_image.set()
+    await BotAddPostState.post_processing.set()
 
 
-@dp.message_handler(content_types=['photo'], state=BotAddPostState.get_image)
-async def handle_docs_photo(message, state: FSMContext):
-    async with state.proxy() as social_net:
-        name = social_net['name']
-    await message.photo[-1].download(photo_path.get_filepath() + '/' + 'id{}_userid{}_name{}.jpg'.format(message.from_user.id))
-    await message.answer('получил - {}'.format(message.photo[-1].file_id))
+@dp.message_handler(content_types=['photo'], state=BotAddPostState.post_processing)
+async def get_photo(message, state: FSMContext):
+    try:
+        image_id = message.photo[-1].file_id
+        image = get_photo_path(image_id)
+        __check_photo(image)
+        async with state.proxy() as post_object:
+            post_object['image'] = image
+        await message.answer('Добавте описание :')
+    except Exception as e:
+        await message.answer('Что-то пошло не так (  \n {}'.format(e))
+
+
+@dp.message_handler(state=BotAddPostState.post_processing)
+async def get_caption(message: types.Message, state: FSMContext):
+    try:
+        caption = message.text
+        __check_caption(caption)
+        async with state.proxy() as post_object:
+            image = post_object['image']
+        data = dict()
+        data[UserRequest.Id_request] = get_id(db_user_request, 'id_request')
+        data[UserRequest.User_id] = str(message.from_user.id)
+        data[UserRequest.Type_request] = TypeRequest.Post_image
+        data[UserRequest.Data] = {'image': image, 'caption': caption}
+        post_object = UserRequestFormat(data)
+        db_user_request.push(post_object.to_dict())
+        await message.answer('Добавлено в очередь на отправку')
+    except Exception as e:
+        await message.answer('Что-то пошло не так (  \n {}'.format(e))
 
 
 @dp.message_handler(Text(equals="Настройки"), state=BotMainState.main)
@@ -209,3 +249,16 @@ async def go_back(message: types.Message):
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
+
+
+
+
+
+# @dp.message_handler(content_types=['photo'], state=BotAddPostState.get_image)
+# async def handle_docs_photo(message, state: FSMContext):
+#     async with state.proxy() as social_net:
+#         name = social_net['name']
+#     _id = get_id(db_user_request, 'id_request')
+#     await message.photo[-1].download(photo_path.get_filepath() + 'id:{}_userid:{}_name:{}.jpg'.format(
+#     _id,message.from_user.id,name))
+#     await message.answer('получил - {}'.format(message.photo[-1].file_id))

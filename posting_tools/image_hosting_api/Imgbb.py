@@ -31,4 +31,4 @@ def upload_image(filePath):
         print(type(e), e)
 
 
-upload_image('/home/mecing/Desktop/Project/posting_bot/1.jpg')
+upload_image('/trash/1.jpg')

@@ -23,4 +23,6 @@ db_user_data = MongoDriver(MongoData.db_main, MongoData.db_collection_user)
 # приглашения
 db_invite = MongoDriver(MongoData.db_main, MongoData.db_collection_invite)
 
+# запросы пользователей
 db_user_request = MongoDriver(MongoData.db_main, MongoData.db_collection_requests)
+
