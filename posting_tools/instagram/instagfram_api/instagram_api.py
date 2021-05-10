@@ -11,6 +11,7 @@ class InstagramApi:
         self.params = self.__get_user_param(user_object)
 
     def __get_user_param(self, user_object):
+        # todo есть вероятность, что версия изменится, придумать как проверять версию api
         data = self.__get_user_data(user_object[UserRequest.Data_object])
         user_param = dict()
         user_param['access_token'] = data['access_token']
@@ -18,15 +19,15 @@ class InstagramApi:
         user_param['instagram_account_id'] = data['instagram_account_id']
         return user_param
 
-    def __get_user_data(self, user_data):
-        """получить данные пользователя из базы данных и выдать"""
+    def __get_user_data(self, user_data) -> dict:
+        """Получить access_token и instagram_account_id пользователя"""
         data = dict()
         data['access_token'] = user_data['access_token']
         data['instagram_account_id'] = user_data['instagram_account_id']
         return data
 
-    def __api_call(self, url, endpoint_data, type):
-        if type == RequestType.POST:
+    def __api_call(self, url, endpoint_data, request_type) -> dict:
+        if request_type == RequestType.POST:
             data = requests.post(url, endpoint_data)
         else:
             data = requests.get(url, endpoint_data)
@@ -34,9 +35,9 @@ class InstagramApi:
         response = dict()
         response['url'] = url
         response['endpoint_params'] = endpoint_data
-        response['endpoint_params_pretty'] = json.dumps(endpoint_data, indent=4)
+        response['endpoint_params_pretty'] = json.dumps(endpoint_data)
         response['json_data'] = json.loads(data.content)
-        response['json_data_pretty'] = json.dumps(response['json_data'], indent=4)
+        response['json_data_pretty'] = json.dumps(response['json_data'])
         return response
 
     def make_post(self, user_request, delay=5):
@@ -54,6 +55,7 @@ class InstagramApi:
             """Опубликовать медиа объект"""
             response_media_object = self.__posting_media(media_id)
             posting_limit = self.get_limit_posting_content()
+            # todo переделать ответ в dict
             print("---- POSTING MEDIA OBJECT STATUS -----")
             print("     ID:")
             print("     " + str(response_media_object['json_data']))
@@ -62,16 +64,16 @@ class InstagramApi:
             return response_media_object, posting_limit
 
         except NoValidToken:
-            #todo вернуть запрос в базу
+            # todo вернуть ошибку выше
             pass
         except BadImage:
-            # todo вернуть запрос в базу
+            # todo вернуть ошибку выше
             pass
         except BadCaption:
-            # todo вернуть запрос в базу
+            # todo вернуть ошибку выше
             pass
         except Exception as e:
-            # todo вернуть запрос в базу
+            # todo вернуть ошибку выше
             print('error - {}'.format(e))
             pass
 
@@ -90,6 +92,7 @@ class InstagramApi:
                         'status': 'IN_PROGRESS'}
             self.__check_response_errors(response)
             return response
+        # todo добавить логгирование
         except NoValidToken:
             print('---------------ERROR TOKEN---------------')
             raise NoValidToken

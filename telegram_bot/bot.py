@@ -10,6 +10,7 @@ from database.db_format.user_request import UserRequestFormat
 from posting_tools.tmp_photo import photo_path
 from posting_tools.telegram.telegram_api import get_photo_path
 
+
 def out_keyword_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add("Сделать пост")

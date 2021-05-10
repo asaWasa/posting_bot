@@ -2,14 +2,15 @@ from database.mongodb.mongodriver import MongoDriver
 from common.constants import MongoData, Queues
 import time
 from signal import *
-from database.mongodb.MongoFactory import MongoFactory
 from common.constants import UserRequest
+# todo подключить логгирование
+# todo переделать принты на логи
 
 
-class Manager:
-    def __init__(self, manager_queue):
+class Main:
+    def __init__(self, main_queue):
         self.flag = True
-        self.manager_queue = manager_queue
+        self.main_queue = main_queue
         try:
             self.instagram = MongoDriver(db_name=MongoData.db_queues, collection_name=Queues.Instagram)
             # self.vk = MongoDriver(db_name=MongoData.db_queues, collection_name=Queues.Vk)
@@ -17,12 +18,12 @@ class Manager:
         except Exception as e:
             print(e)
 
-    def start_manager(self):
+    def start_main(self):
         try:
             while self.flag:
                 try:
-                    if not self.manager_queue.is_empty():
-                        self.__processing_request(self.manager_queue.pop())
+                    if not self.main_queue.is_empty():
+                        self.__processing_request(self.main_queue.pop())
                 except Exception as e:
                     print(e)
                 time.sleep(1)
@@ -39,15 +40,15 @@ class Manager:
 
 
 def clean(signum, frame):
-    manager.flag = False
+    main.flag = False
 
 
 main_queue = MongoDriver(db_name=MongoData.db_main, collection_name=MongoData.db_collection_requests)
 # main_queue = MongoDriver(db_name=MongoData.db_queues, collection_name=MongoData.db_collection_main_queue)
 
-manager = Manager(main_queue)
+main = Main(main_queue)
 
 for sig in (SIGTERM, SIGILL, SIGINT):
     signal(sig, clean)
 
-manager.start_manager()
+main.start_main()

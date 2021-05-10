@@ -37,7 +37,7 @@ class Manager:
     def __run_request(self, request):
         user_id = self.__get_id_from_request(request)
         users_data = self.__get_user_data_from_database(user_id)
-        concrete_class = self.handler(users_data, request)
+        concrete_class = self.handler(users_data)
         concrete_class.start_handler()
 
     def __get_id_from_request(self, request):
@@ -48,6 +48,7 @@ class Manager:
 
     def __get_user_data_from_database(self, user_id):
         try:
+            # todo исправить, явно неправильно работает
             users_data = self.factory.generete()
             return users_data.get('id', user_id)
         except:

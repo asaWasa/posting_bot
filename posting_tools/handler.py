@@ -11,6 +11,3 @@ class Handler:
             self.handler.make_post(self.request)
         else:
             print('impossible request')
-
-
-
