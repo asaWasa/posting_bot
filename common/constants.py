@@ -20,7 +20,8 @@ class UserRequest:
     Id_request = 'id_request'
     User_id = 'user_id'
     Type_request = 'type_request'
-    Data = 'data'
+    Data_object = 'data_object'
+    Name = 'name'
     Date_creation = 'date_creation'
 
 

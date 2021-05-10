@@ -203,13 +203,16 @@ async def get_caption(message: types.Message, state: FSMContext):
         caption = message.text
         __check_caption(caption)
         async with state.proxy() as post_object:
+            name = post_object['name']
             image = post_object['image']
+
         data = dict()
         data[UserRequest.Id_request] = get_id(db_user_request, 'id_request')
         data[UserRequest.User_id] = str(message.from_user.id)
         data[UserRequest.Type_request] = TypeRequest.Post_image
-        data[UserRequest.Data] = {'image': image, 'caption': caption}
-        post_object = UserRequestFormat(data)
+        data[UserRequest.Name] = name
+        data[UserRequest.Data_object] = {'image': image, 'caption': caption}
+        post_object = UserRequestFormat(data=data)
         db_user_request.push(post_object.to_dict())
         await message.answer('Добавлено в очередь на отправку')
     except Exception as e:

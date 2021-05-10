@@ -3,6 +3,7 @@ from common.constants import MongoData, Queues
 import time
 from signal import *
 from database.mongodb.MongoFactory import MongoFactory
+from common.constants import UserRequest
 
 
 class Manager:
@@ -30,7 +31,7 @@ class Manager:
 
     def __processing_request(self, request):
         try:
-            if "instagram" in request:
+            if "instagram" in request[UserRequest.Name]:
                 self.instagram.push(request)
 
         except Exception as e:
@@ -41,7 +42,7 @@ def clean(signum, frame):
     manager.flag = False
 
 
-main_queue = MongoFactory(db_name=MongoData.db_queues, collection_name=MongoData.db_collection_main_queue)
+main_queue = MongoDriver(db_name=MongoData.db_main, collection_name=MongoData.db_collection_requests)
 # main_queue = MongoDriver(db_name=MongoData.db_queues, collection_name=MongoData.db_collection_main_queue)
 
 manager = Manager(main_queue)

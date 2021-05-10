@@ -4,7 +4,7 @@ from signal import SIGILL, SIGINT, SIGTERM
 from common.constants import MongoData, Queues
 from database.mongodb.mongodriver import MongoDriver
 from database.mongodb.MongoFactory import MongoFactory
-from posting_tools.instagram.instagfram_api.InstagramHeandler import InstagramHandler
+from posting_tools.instagram.instagfram_api.Instagram_handler import InstagramHandler
 
 
 class ManagerInstagram(Manager):

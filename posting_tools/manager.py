@@ -1,6 +1,5 @@
 import time
 from common.errors import *
-from multiprocess.multiprocess import Multiprocess
 
 
 class Manager:
@@ -38,9 +37,8 @@ class Manager:
     def __run_request(self, request):
         user_id = self.__get_id_from_request(request)
         users_data = self.__get_user_data_from_database(user_id)
-        multiprocess = self.__build_multiprocess(request=request,
-                                                 user_data=users_data)
-        multiprocess.start()
+        concrete_class = self.handler(users_data, request)
+        concrete_class.start_handler()
 
     def __get_id_from_request(self, request):
         try:
@@ -55,9 +53,9 @@ class Manager:
         except:
             print('user_id not find')
 
-    def __build_multiprocess(self, request, user_data):
-        multiprocess = Multiprocess(request=request,
-                                    user_data=user_data,
-                                    factory=self.factory,
-                                    handler=self.handler)
-        return multiprocess
+    # def __build_multiprocess(self, request, user_data):
+    #     multiprocess = Multiprocess(request=request,
+    #                                 user_data=user_data,
+    #                                 factory=self.factory,
+    #                                 handler=self.handler)
+    #     return multiprocess

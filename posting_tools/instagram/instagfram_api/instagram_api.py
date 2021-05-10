@@ -1,7 +1,8 @@
 from time import sleep
 import requests
 import json
-from common.constants import RequestType
+from common.constants import RequestType, UserRequest
+
 from common.errors import *
 
 
@@ -10,12 +11,19 @@ class InstagramApi:
         self.params = self.__get_user_param(user_object)
 
     def __get_user_param(self, user_object):
-        user_data = self.__get_user_data(user_object)
+        data = self.__get_user_data(user_object[UserRequest.Data_object])
         user_param = dict()
-        user_param['access_token'] = user_data['access_token']
+        user_param['access_token'] = data['access_token']
         user_param['endpoint_base'] = 'https://graph.facebook.com/v10.0/'
-        user_param['instagram_account_id'] = user_data['instagram_account_id']
+        user_param['instagram_account_id'] = data['instagram_account_id']
         return user_param
+
+    def __get_user_data(self, user_data):
+        """получить данные пользователя из базы данных и выдать"""
+        data = dict()
+        data['access_token'] = user_data['access_token']
+        data['instagram_account_id'] = user_data['instagram_account_id']
+        return data
 
     def __api_call(self, url, endpoint_data, type):
         if type == RequestType.POST:
@@ -30,13 +38,6 @@ class InstagramApi:
         response['json_data'] = json.loads(data.content)
         response['json_data_pretty'] = json.dumps(response['json_data'], indent=4)
         return response
-
-    def __get_user_data(self, user_object):
-        """получить данные пользователя из базы данных и выдать"""
-        user_data = dict()
-        user_data['access_token'] = user_object['access_token']
-        user_data['instagram_account_id'] = user_object['instagram_account_id']
-        return user_data
 
     def make_post(self, user_request, delay=5):
         try:
@@ -137,8 +138,8 @@ class InstagramApi:
         return self.__api_call(url, endpoint_data, 'GET')
 
 
-api = InstagramApi({'instagram_account_id': '17841403220449260',
-                    'access_token': 'EAAGpsNw9iWoBANRukZBWRBkXLUOsZBqa95BdYy0mqVvfmUSU29tfQRYVgcesZCcZAZCIf0uZA0BNHZCsUth5kdSvUL7LAKuZAuaIhsQImei2lycWnmsvnnIl8FqGE6Df04kXelQTjoXd0Kl2DZBEMUQs9RrsAVGjhNMZB37rnTaAFFKmexLP14fkfbWr02qILuPI148JhXSLphLrwD6UvgkuZB6yxZBxHo6tDciYCv6yYMq2vERQagqlj5e2JoOM2nOF3QcZD'})
-
-api.make_post({'image': 'https://api.telegram.org/file/bot1709642482:AAHXAnZ8UBCMeEDuEikCqYBFhkA8MDN7rNk/photos/file_0.jpg',
-               'caption': 'o'})
+# api = InstagramApi({'instagram_account_id': '17841403220449260',
+#                     'access_token': 'EAAGpsNw9iWoBANRukZBWRBkXLUOsZBqa95BdYy0mqVvfmUSU29tfQRYVgcesZCcZAZCIf0uZA0BNHZCsUth5kdSvUL7LAKuZAuaIhsQImei2lycWnmsvnnIl8FqGE6Df04kXelQTjoXd0Kl2DZBEMUQs9RrsAVGjhNMZB37rnTaAFFKmexLP14fkfbWr02qILuPI148JhXSLphLrwD6UvgkuZB6yxZBxHo6tDciYCv6yYMq2vERQagqlj5e2JoOM2nOF3QcZD'})
+#
+# api.make_post({'image': 'https://api.telegram.org/file/bot1709642482:AAHXAnZ8UBCMeEDuEikCqYBFhkA8MDN7rNk/photos/file_0.jpg',
+#                'caption': 'o'})
