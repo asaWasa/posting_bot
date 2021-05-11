@@ -16,6 +16,7 @@ class UserData:
     Time = 'time'
 
 
+# todo вынести в отдельный файл
 class UserRequest:
     Id_request = 'id_request'
     User_id = 'user_id'
@@ -25,7 +26,8 @@ class UserRequest:
     Date_creation = 'date_creation'
 
 
-class TypeRequest:
+# todo вынести в отдельный файл
+class UserTypeRequest:
     Post_image = 'POST_IMAGE'
     Post_video = 'POST_VIDEO'
 

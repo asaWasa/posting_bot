@@ -1,7 +1,7 @@
 from time import sleep
 import requests
 import json
-from common.constants import RequestType, UserRequest
+from common.constants import RequestType
 
 from common.errors import *
 
@@ -21,10 +21,9 @@ class InstagramApi:
 
     def __get_user_data(self, user_data) -> dict:
         """Получить access_token и instagram_account_id пользователя"""
-        user_data = user_data['data_object']
         data = dict()
-        data['access_token'] = user_data['access_token']
-        data['instagram_account_id'] = user_data['instagram_account_id']
+        data['access_token'] = user_data['token']
+        data['instagram_account_id'] = user_data['business_id']
         return data
 
     def __api_call(self, url, endpoint_data, request_type) -> dict:
@@ -32,7 +31,6 @@ class InstagramApi:
             data = requests.post(url, endpoint_data)
         else:
             data = requests.get(url, endpoint_data)
-
         response = dict()
         response['url'] = url
         response['endpoint_params'] = endpoint_data
@@ -44,7 +42,8 @@ class InstagramApi:
     def make_post(self, user_request, delay=5):
         try:
             """создать медиа объект"""
-            media_response = self.__create_media(user_request['image'], user_request['caption'])
+            user_data = self.__get_request_data(user_request)
+            media_response = self.__create_media(user_data['image'], user_data['caption'])
             media_id = media_response['data']['json_data']
             while media_response['status'] != 'FINISHED':
                 status_media_object = self.get_status_media_object(media_id)
@@ -77,6 +76,9 @@ class InstagramApi:
             # todo вернуть ошибку выше
             print('error - {}'.format(e))
             pass
+
+    def __get_request_data(self, request):
+        return request['data_object']
 
     def __create_media(self, image, caption, type_media='img'):
         try:
@@ -140,10 +142,3 @@ class InstagramApi:
         endpoint_data['fields'] = 'config,quota_usage'
         endpoint_data['access_token'] = self.params['access_token']
         return self.__api_call(url, endpoint_data, 'GET')
-
-
-# api = InstagramApi({'instagram_account_id': '17841403220449260',
-#                     'access_token': 'EAAGpsNw9iWoBANRukZBWRBkXLUOsZBqa95BdYy0mqVvfmUSU29tfQRYVgcesZCcZAZCIf0uZA0BNHZCsUth5kdSvUL7LAKuZAuaIhsQImei2lycWnmsvnnIl8FqGE6Df04kXelQTjoXd0Kl2DZBEMUQs9RrsAVGjhNMZB37rnTaAFFKmexLP14fkfbWr02qILuPI148JhXSLphLrwD6UvgkuZB6yxZBxHo6tDciYCv6yYMq2vERQagqlj5e2JoOM2nOF3QcZD'})
-#
-# api.make_post({'image': 'https://api.telegram.org/file/bot1709642482:AAHXAnZ8UBCMeEDuEikCqYBFhkA8MDN7rNk/photos/file_0.jpg',
-#                'caption': 'o'})

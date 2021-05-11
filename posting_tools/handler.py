@@ -1,3 +1,5 @@
+from common.constants import UserRequest, UserTypeRequest
+
 
 class Handler:
     def __init__(self):
@@ -8,7 +10,7 @@ class Handler:
 
     def start_handler(self):
         # todo требуется обработка ошибок
-        if self.request['POST_IMAGE']:
+        if self.request[UserRequest.Type_request] == UserTypeRequest.Post_image:
             self.handler.make_post(self.request)
         else:
             print('impossible request')

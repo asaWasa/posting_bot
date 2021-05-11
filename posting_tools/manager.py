@@ -46,7 +46,8 @@ class Manager:
 
     def __run_request(self, request):
         user_id = self.__get_id_from_request(request)
-        social_media_user_data = self.__get_user_data_from_database(user_id)
+        data = self.__get_user_data_from_database(user_id)
+        social_media_user_data = self.get_social_media_data(data)
         concrete_class = self.handler(social_media_user_data, request)
         concrete_class.start_handler()
 
@@ -61,14 +62,12 @@ class Manager:
             user_id = int(user_id)
             # todo исправить, явно неправильно работает
             users_data = self.factory.generate()
+            #todo исправить формат базы с пользователями
             return users_data.get('id', user_id)
         except:
             # todo выкинуть наверх ошибку
             print('user_id not find')
 
-    # def __build_multiprocess(self, request, user_data):
-    #     multiprocess = Multiprocess(request=request,
-    #                                 user_data=user_data,
-    #                                 factory=self.factory,
-    #                                 handler=self.handler)
-    #     return multiprocess
+    def get_social_media_data(self, data):
+        social_net = data['social_network']
+        return social_net[self.name_handler]

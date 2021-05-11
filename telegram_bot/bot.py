@@ -4,7 +4,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
 from loader import dp, db_user_data, db_invite, db_user_request
-from common.constants import UserData, UserRequest, Invite, SocialNetwork, TypeRequest
+from common.constants import UserData, UserRequest, Invite, SocialNetwork, UserTypeRequest
 from database.db_format.user_data import UserDataFormat
 from database.db_format.user_request import UserRequestFormat
 # from posting_tools.tmp_photo import photo_path
@@ -209,7 +209,7 @@ async def get_caption(message: types.Message, state: FSMContext):
         data = dict()
         data[UserRequest.Id_request] = get_id(db_user_request, 'id_request')
         data[UserRequest.User_id] = str(message.from_user.id)
-        data[UserRequest.Type_request] = TypeRequest.Post_image
+        data[UserRequest.Type_request] = UserTypeRequest.Post_image
         data[UserRequest.Name] = name
         data[UserRequest.Data_object] = {'image': image, 'caption': caption}
         post_object = UserRequestFormat(data=data)
