@@ -7,6 +7,7 @@ class Manager:
         self.flag = True
         self.factory = None
         self.handler = None
+        self.name_handler = None
         self.manager_queue = manager_queue
 
     def start(self):
@@ -16,7 +17,10 @@ class Manager:
             if not self.manager_queue.is_empty():
                 try:
                     request = self.manager_queue.pop()
+                    # todo Вынести проверку ошибок в отдельную функцию
                     self.__check_request(request)
+                    self.__check_name_handler(self.name_handler)
+
                     self.__run_request(request)
                 except BadRequest:
                     print('Bad request - {}'.format(request))
@@ -34,24 +38,32 @@ class Manager:
         if request is None:
             raise RequestIsNone
 
+    def __check_name_handler(self, name_handler):
+        if name_handler is None:
+            raise BadNameHandler
+        if not name_handler:
+            raise BadNameHandler
+
     def __run_request(self, request):
         user_id = self.__get_id_from_request(request)
-        users_data = self.__get_user_data_from_database(user_id)
-        concrete_class = self.handler(users_data)
+        social_media_user_data = self.__get_user_data_from_database(user_id)
+        concrete_class = self.handler(social_media_user_data, request)
         concrete_class.start_handler()
 
     def __get_id_from_request(self, request):
         try:
-            return request['id']
+            return request['user_id']
         except:
             raise BadRequest
 
-    def __get_user_data_from_database(self, user_id):
+    def __get_user_data_from_database(self, user_id) -> dict:
         try:
+            user_id = int(user_id)
             # todo исправить, явно неправильно работает
-            users_data = self.factory.generete()
+            users_data = self.factory.generate()
             return users_data.get('id', user_id)
         except:
+            # todo выкинуть наверх ошибку
             print('user_id not find')
 
     # def __build_multiprocess(self, request, user_data):

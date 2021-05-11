@@ -26,3 +26,8 @@ class BadCaption(Exception):
 class BadRequest(Exception):
     def __init__(self, text=None):
         self.text = text
+
+
+class BadNameHandler(Exception):
+    def __init__(self, text=None):
+        self.text = text

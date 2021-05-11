@@ -4,6 +4,7 @@ from signal import SIGILL, SIGINT, SIGTERM
 from common.constants import MongoData, Queues
 from database.mongodb.MongoFactory import MongoFactory
 from posting_tools.instagram.instagfram_api.Instagram_handler import InstagramHandler
+from common.constants import SocialNetwork
 
 
 class ManagerInstagram(Manager):
@@ -12,6 +13,7 @@ class ManagerInstagram(Manager):
         super().__init__(manager_queue)
         self.manager_queue = manager_queue.generate()
         self.handler = InstagramHandler
+        self.name_handler = SocialNetwork.Instagram
         self.factory = MongoFactory(db_name=MongoData.db_main, collection_name=MongoData.db_collection_user)
 
 

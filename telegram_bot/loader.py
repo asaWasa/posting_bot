@@ -1,5 +1,6 @@
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+# from aiogram.contrib.fsm_storage.mongo import MongoStorage
 from database.mongodb.mongodriver import MongoDriver
 from common.config import api_key
 from common.constants import Key, MongoData
@@ -11,8 +12,9 @@ logging.basicConfig(level=logging.INFO)
 # бот
 bot = Bot(token=api_key[Key.Api])
 
+# todo заменить хранилище состояний, чтобы состояния хранились в базе mongodb  (MongoStorage)
 # хранилище состояний
-storage = MemoryStorage()  # использует оперативную память
+storage = MemoryStorage()  # хранилище состояний использует оперативную память
 
 # диспетчер для обработки действий пользователя
 dp = Dispatcher(bot, storage=storage)
@@ -25,4 +27,3 @@ db_invite = MongoDriver(MongoData.db_main, MongoData.db_collection_invite)
 
 # запросы пользователей
 db_user_request = MongoDriver(MongoData.db_main, MongoData.db_collection_requests)
-

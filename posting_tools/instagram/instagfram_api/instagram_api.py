@@ -12,7 +12,7 @@ class InstagramApi:
 
     def __get_user_param(self, user_object):
         # todo есть вероятность, что версия изменится, придумать как проверять версию api
-        data = self.__get_user_data(user_object[UserRequest.Data_object])
+        data = self.__get_user_data(user_object)
         user_param = dict()
         user_param['access_token'] = data['access_token']
         user_param['endpoint_base'] = 'https://graph.facebook.com/v10.0/'
@@ -21,6 +21,7 @@ class InstagramApi:
 
     def __get_user_data(self, user_data) -> dict:
         """Получить access_token и instagram_account_id пользователя"""
+        user_data = user_data['data_object']
         data = dict()
         data['access_token'] = user_data['access_token']
         data['instagram_account_id'] = user_data['instagram_account_id']

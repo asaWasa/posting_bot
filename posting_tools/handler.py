@@ -7,6 +7,7 @@ class Handler:
         self.request = None
 
     def start_handler(self):
+        # todo требуется обработка ошибок
         if self.request['POST_IMAGE']:
             self.handler.make_post(self.request)
         else:

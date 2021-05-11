@@ -7,7 +7,7 @@ from loader import dp, db_user_data, db_invite, db_user_request
 from common.constants import UserData, UserRequest, Invite, SocialNetwork, TypeRequest
 from database.db_format.user_data import UserDataFormat
 from database.db_format.user_request import UserRequestFormat
-from posting_tools.tmp_photo import photo_path
+# from posting_tools.tmp_photo import photo_path
 from posting_tools.telegram.telegram_api import get_photo_path
 
 
@@ -100,7 +100,7 @@ async def add_post(message: types.Message):
         await message.answer('У вас нет подключенных сетей')
     else:
         for net in social_networks:
-            btns.append(types.InlineKeyboardButton("{}".format(net), callback_data='post_{}'.format(net), ))
+            btns.append(types.InlineKeyboardButton("{}".format(net), callback_data='post_{}'.format(net)))
         media.add(*btns)
         if len(social_networks) > 1:
             media.add(types.InlineKeyboardButton("All", callback_data='all'))
@@ -206,7 +206,6 @@ async def get_caption(message: types.Message, state: FSMContext):
         async with state.proxy() as post_object:
             name = post_object['name']
             image = post_object['image']
-
         data = dict()
         data[UserRequest.Id_request] = get_id(db_user_request, 'id_request')
         data[UserRequest.User_id] = str(message.from_user.id)
@@ -253,16 +252,3 @@ async def go_back(message: types.Message):
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
-
-
-
-
-
-# @dp.message_handler(content_types=['photo'], state=BotAddPostState.get_image)
-# async def handle_docs_photo(message, state: FSMContext):
-#     async with state.proxy() as social_net:
-#         name = social_net['name']
-#     _id = get_id(db_user_request, 'id_request')
-#     await message.photo[-1].download(photo_path.get_filepath() + 'id:{}_userid:{}_name:{}.jpg'.format(
-#     _id,message.from_user.id,name))
-#     await message.answer('получил - {}'.format(message.photo[-1].file_id))
