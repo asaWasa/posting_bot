@@ -48,6 +48,7 @@ class SocialNetwork:
     Twitter = 'twitter'
     YouTube = 'youtube'
     Telegram = 'telegram'
+    TikTok = 'tiktok'
 
 
 class MongoData:

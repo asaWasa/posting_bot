@@ -28,3 +28,4 @@ for sig in (SIGTERM, SIGILL, SIGINT):
     signall(sig, clean)
 
 manager.start()
+

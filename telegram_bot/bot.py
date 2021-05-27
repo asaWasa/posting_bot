@@ -9,13 +9,24 @@ from database.db_format.user_data import UserDataFormat
 from database.db_format.user_request import UserRequestFormat
 # from posting_tools.tmp_photo import photo_path
 from posting_tools.telegram.telegram_api import get_photo_path
+from common.errors import *
 
 
-def out_keyword_menu():
+def reply_keyboard_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add("Сделать пост")
     markup.add("Настройки", "Выход")
     return markup
+
+
+def reply_add_social_networks():
+    media = types.InlineKeyboardMarkup(row_width=3)
+    social_network = [SocialNetwork.Instagram, SocialNetwork.Vk, SocialNetwork.YouTube]
+    btns = list()
+    for net in social_network:
+        btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
+    media.add(*btns)
+    return media
 
 
 def get_id(request_table, param_for_search='id_request'):
@@ -55,15 +66,15 @@ class BotAddPostState(StatesGroup):
 @dp.message_handler(commands=['start'], state='*')
 async def cmd_start(message: types.Message):
     user = types.User.get_current()
-    markup = types.ReplyKeyboardRemove()
     if db_user_data.is_in(UserData.Id, user[UserData.Id]):
         await BotMainState.main.set()
-        await message.answer("Снова здравствуйте!", reply_markup=markup)
-        markup = out_keyword_menu()
+        await message.answer("Снова здравствуйте! " + str(message.from_user.first_name) + "\nЧем займемся на этот раз?",
+                             reply_markup=types.ReplyKeyboardRemove())
+        markup = reply_keyboard_menu()
         await message.answer("Выберите действие", reply_markup=markup)
     else:
-        await message.answer(str(message.from_user.first_name) + " Привет \n Место для красочного приветствия",
-                             reply_markup=markup)
+        await message.answer('Привет ' + str(message.from_user.first_name) + "\nРад что ты с нами!",
+                             reply_markup=types.ReplyKeyboardRemove())
         await message.answer('Пройдите авторизацию')
         await BotMainState.auth.set()
         await message.answer('Введите код приглашения:')
@@ -76,8 +87,8 @@ async def process_auth(message: types.Message):
         db_user_data.push(user_data.to_dict())
         await BotMainState.main.set()
         await message.answer("Успешный вход, добро пожаловать!")
-        markup = out_keyword_menu()
-        await message.answer("Выберите действие", reply_markup=markup)
+        await BotMainState.active.set()
+        await message.answer("Какую сеть подключим?", reply_markup=reply_add_social_networks())
     else:
         await message.answer("Такого приглашения не существует, повторите попытку")
         await message.answer('Введите код приглашения:')
@@ -87,7 +98,6 @@ async def process_auth(message: types.Message):
 async def add_post(message: types.Message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add("Добавить")
-    markup.add('Удалить')
     markup.add("Назад")
     await BotMainState.active.set()
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
@@ -110,7 +120,8 @@ async def add_post(message: types.Message):
 @dp.message_handler(Text(equals="Добавить"), state=BotMainState.active)
 async def add_social_net(message: types.Message):
     media = types.InlineKeyboardMarkup(row_width=3)
-    social_network = [SocialNetwork.Instagram, SocialNetwork.Vk, SocialNetwork.YouTube]
+    social_network = [SocialNetwork.Instagram, SocialNetwork.Vk, SocialNetwork.YouTube,
+                      SocialNetwork.TikTok, SocialNetwork.Twitter]
     btns = list()
     for net in social_network:
         btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
@@ -126,13 +137,21 @@ async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     await BotAddSocialState.business_id.set()
     await query.message.answer('Введите business id :', reply_markup=types.ReplyKeyboardRemove())
 
-
 @dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Vk), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery):
     await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.callback_query_handler(Text(equals='add_' + SocialNetwork.YouTube), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
+
+@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Twitter), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.TikTok), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery):
     await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
 
@@ -167,8 +186,9 @@ async def add_password(message: types.Message, state: FSMContext):
         user[UserData.Social_net][name] = {'business_id': login, 'token': password}
         db_user_data.update_id(UserData.Id, user[UserData.Id], user)
         await BotMainState.main.set()
-        markup = out_keyword_menu()
-        await message.answer("Выберите действие", reply_markup=markup)
+        markup = reply_keyboard_menu()
+        await message.answer("Отлично! аккаунт для социальной сети {} добавлен, теперь \nВыберите действие"
+                             .format('instagram'), reply_markup=markup)
     except Exception as e:
         await message.answer('Такой token невозможен')
 
@@ -214,7 +234,13 @@ async def get_caption(message: types.Message, state: FSMContext):
         data[UserRequest.Data_object] = {'image': image, 'caption': caption}
         post_object = UserRequestFormat(data=data)
         db_user_request.push(post_object.to_dict())
-        await message.answer('Добавлено в очередь на отправку')
+        await message.answer('Принято в обработку')
+        await message.answer('Возврат в главное меню\nВыберите действие', reply_markup=reply_keyboard_menu())
+        await BotMainState.main.set()
+    except UserCaptionError:
+        await message.answer('Такое описание невозможно')
+    except UserGoBack:
+        await message.answer('Выберите действие', reply_markup=reply_keyboard_menu())
     except Exception as e:
         await message.answer('Что-то пошло не так (  \n {}'.format(e))
 
@@ -222,9 +248,47 @@ async def get_caption(message: types.Message, state: FSMContext):
 @dp.message_handler(Text(equals="Настройки"), state=BotMainState.main)
 async def get_settings(message: types.Message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add('Удалить подключенный аккаунт')
     markup.add("Назад")
+    markup.add('Стереть все данные')
     await BotMainState.settings.set()
     await message.answer("Настройки", reply_markup=markup)
+
+
+@dp.message_handler(Text(equals="Удалить подключенный аккаунт"), state=BotMainState.settings)
+async def del_(message: types.Message, state: FSMContext):
+    media = types.InlineKeyboardMarkup(row_width=3)
+    user = types.User.get_current()
+    user = db_user_data.get(UserData.Id, user[UserData.Id])
+    social_networks = user[UserData.Social_net]
+    btns = list()
+    for net in social_networks:
+        btns.append(types.InlineKeyboardButton("{}".format(net),
+                                               callback_data='del_{}'.format(net)))
+    media.add(*btns)
+    if len(social_networks) > 1:
+        media.add(types.InlineKeyboardButton("All", callback_data='all'))
+    await message.answer("Выберите аккаунт для удаления", reply_markup=media)
+
+
+@dp.callback_query_handler(Text(equals='del_' + SocialNetwork.Instagram), state=BotMainState.settings)
+async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
+    user = types.User.get_current()
+    user = db_user_data.get(UserData.Id, user[UserData.Id])
+    user[UserData.Social_net] = {}
+    db_user_data.update_id(UserData.Id, user[UserData.Id], user)
+    await query.message.answer('Аккаунт социальной сети instagram удален\nВыберите действие:', reply_markup=reply_keyboard_menu())
+    await BotMainState.main.set()
+
+
+@dp.message_handler(Text(equals="Стереть все данные"), state=BotMainState.settings)
+async def exit_(message: types.Message, state: FSMContext):
+    user = types.User.get_current()
+    if db_user_data.is_in(UserData.Id, user[UserData.Id]):
+        db_user_data.pop(UserData.Id, user[UserData.Id])
+    markup = types.ReplyKeyboardRemove()
+    await state.finish()
+    await message.answer("Вся информация о вас полностью очищена!", reply_markup=markup)
 
 
 @dp.message_handler(Text(equals="Выход"), state=BotMainState.main)
@@ -238,7 +302,7 @@ async def exit_(message: types.Message, state: FSMContext):
 async def go_back(message: types.Message):
     await BotMainState.main.set()
     await message.answer("<-")
-    markup = out_keyword_menu()
+    markup = reply_keyboard_menu()
     await message.answer("Выберите действие", reply_markup=markup)
 
 
@@ -246,7 +310,7 @@ async def go_back(message: types.Message):
 async def go_back(message: types.Message):
     await BotMainState.main.set()
     await message.answer("<-")
-    markup = out_keyword_menu()
+    markup = reply_keyboard_menu()
     await message.answer("Выберите действие", reply_markup=markup)
 
 
