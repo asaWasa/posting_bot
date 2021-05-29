@@ -1,3 +1,6 @@
+from aiogram import types
+
+
 NONE = None
 
 
@@ -32,14 +35,14 @@ class UserTypeRequest:
     Post_video = 'POST_VIDEO'
 
 
-class Rights:
-    User = 0
-    Moderator = 1
-    Admin = 2
+class RIGHTS:
+    USER = 0
+    MODERATOR = 1
+    ADMIN = 2
 
 
-class Invite:
-    Invite_key = 'invite_key'
+class INVITE:
+    KEY = 'invite_key'
 
 
 class SocialNetwork:
@@ -72,3 +75,4 @@ class Queues:
 class RequestType:
     POST = 'POST'
     GET = 'GET'
+
