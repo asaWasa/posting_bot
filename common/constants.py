@@ -85,3 +85,4 @@ class QUEUES:
 class RequestType:
     POST = 'POST'
     GET = 'GET'
+
