@@ -12,5 +12,6 @@ class Handler:
         # todo требуется обработка ошибок
         if self.request[UserRequest.Type_request] == UserTypeRequest.Post_image:
             self.handler.make_post(self.request)
+
         else:
             print('impossible request')

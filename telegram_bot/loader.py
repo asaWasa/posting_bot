@@ -4,14 +4,14 @@ from aiogram.contrib.fsm_storage.mongo import MongoStorage
 
 from database.mongodb.mongodriver import MongoDriver
 from common.config import api_key
-from common.constants import Key, MongoData
+from common.constants import KEY, MongoData
 import logging
 
 # логгирование
 logging.basicConfig(level=logging.INFO)
 
 # бот
-bot = Bot(token=api_key[Key.Api])
+bot = Bot(token=api_key[KEY.API])
 
 # todo заменить хранилище состояний, чтобы состояния хранились в базе mongodb  (MongoStorage)
 # хранилище состояний

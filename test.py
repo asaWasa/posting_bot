@@ -30,7 +30,7 @@ def get_id():
 
 # print(photo_path.get_filepath())
 users_invite.push({
-    Invite.Invite_key: 'test'
+    INVITE.KEY: 'test'
 })
 
 def __api_call(self, url, endpoint_data, type):

@@ -51,6 +51,7 @@ class InstagramApi:
                 print("---- IMAGE MEDIA OBJECT STATUS -----")
                 print("     Status Code:")
                 print("     " + media_response['status'])
+
                 sleep(delay)
             """Опубликовать медиа объект"""
             response_media_object = self.__posting_media(media_id)

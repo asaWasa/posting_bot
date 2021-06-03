@@ -1,19 +1,35 @@
 NONE = None
 
 
-class Key:
-    Api = 'api_key'
+class KEY:
+    API = 'api_key'
 
 
-class UserData:
-    Id = 'id'
-    Is_bot = 'is_bot'
-    First_name = 'first_name'
-    Username = 'username'
-    Language_code = 'language_code'
-    Admin_rule = 'admin_rule'
-    Social_net = 'social_network'
-    Time = 'time'
+class SOCIAL_NETWORKS:
+    INSTAGRAM = 'instagram'
+    VK = 'vk'
+    TWITTER = 'twitter'
+    YOUTUBE = 'youtube'
+    TELEGRAM = 'telegram'
+    TIKTOK = 'tiktok'
+
+
+class USER_DATA:
+    ID = 'id'
+    IS_BOT = 'is_bot'
+    FIRST_NAME = 'first_name'
+    USERNAME = 'username'
+    LANGUAGE = 'language_code'
+    RIGHTS = 'rule'
+    SOCIAL_NETWORK = 'social_network'
+    QUOTAS_USAGE = {SOCIAL_NETWORKS.INSTAGRAM: 0,
+                    SOCIAL_NETWORKS.VK: 0,
+                    SOCIAL_NETWORKS.TWITTER: 0,
+                    SOCIAL_NETWORKS.TIKTOK: 0,
+                    SOCIAL_NETWORKS.YOUTUBE: 0,
+                    SOCIAL_NETWORKS.TELEGRAM: 0
+                    }
+    TIME = 'time'
 
 
 # todo вынести в отдельный файл
@@ -32,23 +48,15 @@ class UserTypeRequest:
     Post_video = 'POST_VIDEO'
 
 
-class Rights:
-    User = 0
-    Moderator = 1
-    Admin = 2
+class RIGHTS:
+    USER = 0
+    MODERATOR = 1
+    ADMIN = 2
+    TESTER = 3
 
 
-class Invite:
-    Invite_key = 'invite_key'
-
-
-class SocialNetwork:
-    Instagram = 'instagram'
-    Vk = 'vk'
-    Twitter = 'twitter'
-    YouTube = 'youtube'
-    Telegram = 'telegram'
-    TikTok = 'tiktok'
+class INVITE:
+    KEY = 'key'
 
 
 class MongoData:
@@ -65,8 +73,13 @@ class Instagram:
     main_endpoint_request_api = "https://graph.facebook.com/"
 
 
-class Queues:
-    Instagram = 'instagram'
+class QUEUES:
+    QUEUE = 'queue'
+    INSTAGRAM = SOCIAL_NETWORKS.INSTAGRAM + QUEUE
+    TWITTER = SOCIAL_NETWORKS.TWITTER + QUEUE
+    TIKTOK = SOCIAL_NETWORKS.TIKTOK + QUEUE
+    YOUTUBE = SOCIAL_NETWORKS.YOUTUBE + QUEUE
+    VK = SOCIAL_NETWORKS.VK + QUEUE
 
 
 class RequestType:

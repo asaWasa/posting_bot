@@ -4,7 +4,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
 from loader import dp, db_user_data, db_invite, db_user_request
-from common.constants import UserData, UserRequest, Invite, SocialNetwork, UserTypeRequest
+from common.constants import USER_DATA, UserRequest, INVITE, SOCIAL_NETWORKS, UserTypeRequest
 from database.db_format.user_data import UserDataFormat
 from database.db_format.user_request import UserRequestFormat
 # from posting_tools.tmp_photo import photo_path
@@ -21,7 +21,7 @@ def reply_keyboard_menu():
 
 def reply_add_social_networks():
     media = types.InlineKeyboardMarkup(row_width=3)
-    social_network = [SocialNetwork.Instagram, SocialNetwork.Vk, SocialNetwork.YouTube]
+    social_network = [SOCIAL_NETWORKS.INSTAGRAM, SOCIAL_NETWORKS.VK, SOCIAL_NETWORKS.YOUTUBE]
     btns = list()
     for net in social_network:
         btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
@@ -66,7 +66,7 @@ class BotAddPostState(StatesGroup):
 @dp.message_handler(commands=['start'], state='*')
 async def cmd_start(message: types.Message):
     user = types.User.get_current()
-    if db_user_data.is_in(UserData.Id, user[UserData.Id]):
+    if db_user_data.is_in(USER_DATA.ID, user[USER_DATA.ID]):
         await BotMainState.main.set()
         await message.answer("Снова здравствуйте! " + str(message.from_user.first_name) + "\nЧем займемся на этот раз?",
                              reply_markup=types.ReplyKeyboardRemove())
@@ -82,7 +82,7 @@ async def cmd_start(message: types.Message):
 
 @dp.message_handler(state=BotMainState.auth)
 async def process_auth(message: types.Message):
-    if db_invite.is_in(Invite.Invite_key, str(message.text)):
+    if db_invite.is_in(INVITE.KEY, str(message.text)):
         user_data = UserDataFormat(types.User.get_current())
         db_user_data.push(user_data.to_dict())
         await BotMainState.main.set()
@@ -103,8 +103,8 @@ async def add_post(message: types.Message):
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
     media = types.InlineKeyboardMarkup(row_width=3)
     user = types.User.get_current()
-    user = db_user_data.get(UserData.Id, user[UserData.Id])
-    social_networks = user[UserData.Social_net]
+    user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+    social_networks = user[USER_DATA.SOCIAL_NETWORK]
     btns = list()
     if social_networks is None or social_networks == {}:
         await message.answer('У вас нет подключенных сетей')
@@ -120,8 +120,8 @@ async def add_post(message: types.Message):
 @dp.message_handler(Text(equals="Добавить"), state=BotMainState.active)
 async def add_social_net(message: types.Message):
     media = types.InlineKeyboardMarkup(row_width=3)
-    social_network = [SocialNetwork.Instagram, SocialNetwork.Vk, SocialNetwork.YouTube,
-                      SocialNetwork.TikTok, SocialNetwork.Twitter]
+    social_network = [SOCIAL_NETWORKS.INSTAGRAM, SOCIAL_NETWORKS.VK, SOCIAL_NETWORKS.YOUTUBE,
+                      SOCIAL_NETWORKS.TIKTOK, SOCIAL_NETWORKS.TWITTER]
     btns = list()
     for net in social_network:
         btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
@@ -129,29 +129,31 @@ async def add_social_net(message: types.Message):
     await message.answer('Выберите какую социальную сеть подключить:', reply_markup=media)
 
 
-@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Instagram), state=BotMainState.active)
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.INSTAGRAM), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     await query.message.answer('Процесс добавления социальной сети {} введите данные аккаунта'
-                               .format(SocialNetwork.Instagram))
-    await state.update_data(name=SocialNetwork.Instagram)
+                               .format(SOCIAL_NETWORKS.INSTAGRAM))
+    await state.update_data(name=SOCIAL_NETWORKS.INSTAGRAM)
     await BotAddSocialState.business_id.set()
     await query.message.answer('Введите business id :', reply_markup=types.ReplyKeyboardRemove())
 
-@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Vk), state=BotMainState.active)
+
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.VK), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery):
     await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.YouTube), state=BotMainState.active)
-async def callback_button_media(query: types.CallbackQuery):
-    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
-
-@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Twitter), state=BotMainState.active)
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.YOUTUBE), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery):
     await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.TikTok), state=BotMainState.active)
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.TWITTER), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
+
+
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.TIKTOK), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery):
     await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
 
@@ -182,9 +184,9 @@ async def add_password(message: types.Message, state: FSMContext):
             name = social_net['name']
             login = social_net['business_id']
         user = types.User.get_current()
-        user = db_user_data.get(UserData.Id, user[UserData.Id])
-        user[UserData.Social_net][name] = {'business_id': login, 'token': password}
-        db_user_data.update_id(UserData.Id, user[UserData.Id], user)
+        user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+        user[USER_DATA.SOCIAL_NETWORK][name] = {'business_id': login, 'token': password}
+        db_user_data.update_id(USER_DATA.ID, user[USER_DATA.ID], user)
         await BotMainState.main.set()
         markup = reply_keyboard_menu()
         await message.answer("Отлично! аккаунт для социальной сети {} добавлен, теперь \nВыберите действие"
@@ -197,10 +199,10 @@ def __check_token(token):
     pass
 
 
-@dp.callback_query_handler(Text(equals='post_' + SocialNetwork.Instagram), state=BotMainState.active)
+@dp.callback_query_handler(Text(equals='post_' + SOCIAL_NETWORKS.INSTAGRAM), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as social_net:
-        social_net['name'] = SocialNetwork.Instagram
+        social_net['name'] = SOCIAL_NETWORKS.INSTAGRAM
     await query.message.answer('Отправте изображение:', reply_markup=types.ReplyKeyboardRemove())
     await BotAddPostState.post_processing.set()
 
@@ -259,8 +261,8 @@ async def get_settings(message: types.Message):
 async def del_(message: types.Message, state: FSMContext):
     media = types.InlineKeyboardMarkup(row_width=3)
     user = types.User.get_current()
-    user = db_user_data.get(UserData.Id, user[UserData.Id])
-    social_networks = user[UserData.Social_net]
+    user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+    social_networks = user[USER_DATA.SOCIAL_NETWORK]
     btns = list()
     for net in social_networks:
         btns.append(types.InlineKeyboardButton("{}".format(net),
@@ -271,12 +273,12 @@ async def del_(message: types.Message, state: FSMContext):
     await message.answer("Выберите аккаунт для удаления", reply_markup=media)
 
 
-@dp.callback_query_handler(Text(equals='del_' + SocialNetwork.Instagram), state=BotMainState.settings)
+@dp.callback_query_handler(Text(equals='del_' + SOCIAL_NETWORKS.INSTAGRAM), state=BotMainState.settings)
 async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     user = types.User.get_current()
-    user = db_user_data.get(UserData.Id, user[UserData.Id])
-    user[UserData.Social_net] = {}
-    db_user_data.update_id(UserData.Id, user[UserData.Id], user)
+    user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+    user[USER_DATA.SOCIAL_NETWORK] = {}
+    db_user_data.update_id(USER_DATA.ID, user[USER_DATA.ID], user)
     await query.message.answer('Аккаунт социальной сети instagram удален\nВыберите действие:', reply_markup=reply_keyboard_menu())
     await BotMainState.main.set()
 
@@ -284,8 +286,8 @@ async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(Text(equals="Стереть все данные"), state=BotMainState.settings)
 async def exit_(message: types.Message, state: FSMContext):
     user = types.User.get_current()
-    if db_user_data.is_in(UserData.Id, user[UserData.Id]):
-        db_user_data.pop(UserData.Id, user[UserData.Id])
+    if db_user_data.is_in(USER_DATA.ID, user[USER_DATA.ID]):
+        db_user_data.pop(USER_DATA.ID, user[USER_DATA.ID])
     markup = types.ReplyKeyboardRemove()
     await state.finish()
     await message.answer("Вся информация о вас полностью очищена!", reply_markup=markup)
