@@ -51,3 +51,8 @@ class UserCaptionError(Exception):
 class UserGoBack(Exception):
     def __init__(self, text=None):
         self.text = text
+
+
+class UserParamError(Exception):
+    def __init__(self, text=None):
+        self.text = text

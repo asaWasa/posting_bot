@@ -1,10 +1,11 @@
-from signal import signal as signall
-from posting_tools.manager import Manager
 from signal import SIGILL, SIGINT, SIGTERM
+from signal import signal as signall
+
 from common.constants import MongoData, QUEUES
-from database.mongodb.MongoFactory import MongoFactory
-from posting_tools.instagram.instagfram_api.Instagram_handler import InstagramHandler
 from common.constants import SOCIAL_NETWORKS
+from database.mongodb.MongoFactory import MongoFactory
+from posting_tools.instagram.instagram_api.Instagram_handler import InstagramHandler
+from posting_tools.manager import Manager
 
 
 class ManagerInstagram(Manager):
@@ -28,4 +29,3 @@ for sig in (SIGTERM, SIGILL, SIGINT):
     signall(sig, clean)
 
 manager.start()
-
