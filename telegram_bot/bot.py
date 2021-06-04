@@ -3,18 +3,56 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
-from loader import dp, db_user_data, db_invite, db_user_request
-from common.constants import USER_DATA, UserRequest, INVITE, SOCIAL_NETWORKS, UserTypeRequest
-from database.db_format.user_data import UserDataFormat
+from loader import dp, db_user_data, db_invite, db_user_request, stats
+from common.constants import USER_DATA, UserRequest, INVITE, SOCIAL_NETWORKS, UserTypeRequest, RIGHTS
+from database.db_format.user_data import ElementaryUserDataFormat
 from database.db_format.user_request import UserRequestFormat
 from posting_tools.telegram.telegram_api import get_photo_path
 from common.errors import *
+
+
+class BotMainState(StatesGroup):
+    begin = State()  # initial state
+    auth = State()  # state for authorization or registration
+    main = State()  # state main menu
+    active = State()  # state for posting info
+    settings = State()  # state for changing settings
+    end = State()  # state ending
+
+
+class BotAdminState(StatesGroup):
+    main = State()  # state main menu
+    active = State()  # state for posting info
+    settings = State()  # state for changing settings
+
+
+# todo можно переделать в одно состояние и добавить его к основным состояниям
+class BotAddSocialState(StatesGroup):
+    business_id = State()  # state for input facebook business_id
+    token = State()  # state for input facebook token
+
+
+class BotAddPostState(StatesGroup):
+    post_processing = State()
+
+
+class BotCreateInviteState(StatesGroup):
+    add_key = State()
+    add_right = State()
 
 
 def reply_keyboard_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add("Сделать пост")
     markup.add("Настройки", "Выход")
+    return markup
+
+
+def reply_keyboard_admin_menu():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("Сделать пост", 'Создать приглашение')
+    markup.add("Настройки", "Ошибки")
+    markup.add('Выход')
     return markup
 
 
@@ -46,9 +84,16 @@ def reply_active_social_networks_keyboard(social_networks):
     return media
 
 
+def reply_keyboard_right():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("User")
+    markup.add("Admin")
+    return markup
+
+
 def get_id(request_table, param_for_search='id_request'):
     try:
-        return int(request_table.get_last_item(param_for_search)[param_for_search]) + 1
+        return int(request_table.get_count(param_for_search)[param_for_search]) + 1
     except:
         return 0
 
@@ -61,53 +106,78 @@ def __check_caption(caption):
     pass
 
 
-class BotMainState(StatesGroup):
-    begin = State()  # initial state
-    auth = State()  # state for authorization or registration
-    main = State()  # state main menu
-    active = State()  # state for posting info
-    settings = State()  # state for changing settings
-    end = State()  # state ending
-
-
-# todo можно переделать в одно состояние и добавить его к основным состояниям
-class BotAddSocialState(StatesGroup):
-    business_id = State()  # state for input facebook business_id
-    token = State()  # state for input facebook token
-
-
-class BotAddPostState(StatesGroup):
-    post_processing = State()
-
-
 @dp.message_handler(commands=['start'], state='*')
 async def cmd_start(message: types.Message):
-    user = types.User.get_current()
-    if db_user_data.is_in(USER_DATA.ID, user[USER_DATA.ID]):
-        await BotMainState.main.set()
-        await message.answer("Снова здравствуйте! " + str(message.from_user.first_name) + "\nЧем займемся на этот раз?",
-                             reply_markup=types.ReplyKeyboardRemove())
-        markup = reply_keyboard_menu()
-        await message.answer("Выберите действие", reply_markup=markup)
-    else:
-        await message.answer('Привет ' + str(message.from_user.first_name) + "\nРад что ты с нами!",
-                             reply_markup=types.ReplyKeyboardRemove())
+    try:
+        user = types.User.get_current()
+        db_user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+        if db_user[USER_DATA.RIGHTS] == RIGHTS.USER:
+            await BotMainState.main.set()
+            await message.answer("Снова здравствуйте! " + str(message.from_user.first_name) +
+                                 "\nЧем займемся на этот раз?", reply_markup=types.ReplyKeyboardRemove())
+            await message.answer("Выберите действие", reply_markup=reply_keyboard_menu())
+        elif db_user[USER_DATA.RIGHTS] == RIGHTS.ADMIN:
+            await BotAdminState.main.set()
+            s_users, s_errors = stats.get_statistic()
+            await message.answer("Статистика по боту:\n"
+                                 "Пользователей: {}\n"
+                                 "Ошибки: {}".format(s_users, s_errors),
+                                 reply_markup=types.ReplyKeyboardRemove())
+            await message.answer("Выберите действие", reply_markup=reply_keyboard_admin_menu())
+        else:
+            raise
+    except:
+        await message.answer('Привет ' + str(message.from_user.first_name) +
+                             "\nРад что ты с нами!", reply_markup=types.ReplyKeyboardRemove())
         await message.answer('Пройдите авторизацию')
         await BotMainState.auth.set()
         await message.answer('Введите код приглашения:')
 
+    # if db_user_data.if_in(USER_DATA.ID, user[USER_DATA.ID]):
+    #     await BotMainState.main.set()
+    #     await message.answer("Снова здравствуйте! " + str(message.from_user.first_name) + "\nЧем займемся на этот раз?",
+    #                          reply_markup=types.ReplyKeyboardRemove())
+    #     markup = reply_keyboard_menu()
+    #     await message.answer("Выберите действие", reply_markup=markup)
+    # else:
+    #     await message.answer('Привет ' + str(message.from_user.first_name) + "\nРад что ты с нами!",
+    #                          reply_markup=types.ReplyKeyboardRemove())
+    #     await message.answer('Пройдите авторизацию')
+    #     await BotMainState.auth.set()
+    #     await message.answer('Введите код приглашения:')
+
 
 @dp.message_handler(state=BotMainState.auth)
 async def process_auth(message: types.Message):
-    if db_invite.is_in(INVITE.KEY, str(message.text)):
-        user_data = UserDataFormat(types.User.get_current())
-        db_user_data.push(user_data.to_dict())
-        await message.answer("Успешный вход, добро пожаловать!")
-        await BotMainState.active.set()
-        await message.answer("Какую сеть подключим?", reply_markup=reply_passive_social_networks_keyboard())
-    else:
+    try:
+        invite_key = db_invite.get(INVITE.KEY, str(message.text))
+        if invite_key[USER_DATA.RIGHTS] == RIGHTS.USER:
+            user_data = ElementaryUserDataFormat(types.User.get_current())
+            db_user_data.push(user_data.to_dict())
+            await message.answer("Успешный вход, добро пожаловать!")
+            await BotMainState.active.set()
+            await message.answer("Какую сеть подключим?", reply_markup=reply_passive_social_networks_keyboard())
+        elif invite_key[USER_DATA.RIGHTS] == RIGHTS.ADMIN:
+            user_data = ElementaryUserDataFormat(types.User.get_current(), rights=RIGHTS.ADMIN)
+            db_user_data.push(user_data.to_dict())
+            await message.answer("Царь во дворца!")
+            await BotAdminState.main.set()
+            await message.answer("Выберите действие", reply_markup=reply_keyboard_admin_menu())
+        else:
+            raise
+    except:
         await message.answer("Такого приглашения не существует, повторите попытку")
         await message.answer('Введите код приглашения:')
+
+    # if db_invite.if_in(INVITE.KEY, str(message.text)):
+    #     user_data = ElementaryUserDataFormat(types.User.get_current())
+    #     db_user_data.push(user_data.to_dict())
+    #     await message.answer("Успешный вход, добро пожаловать!")
+    #     await BotMainState.active.set()
+    #     await message.answer("Какую сеть подключим?", reply_markup=reply_passive_social_networks_keyboard())
+    # else:
+    #     await message.answer("Такого приглашения не существует, повторите попытку")
+    #     await message.answer('Введите код приглашения:')
 
 
 @dp.message_handler(Text(equals="Сделать пост"), state=BotMainState.main)
@@ -291,7 +361,7 @@ async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(Text(equals="Стереть все данные"), state=BotMainState.settings)
 async def exit_(message: types.Message, state: FSMContext):
     user = types.User.get_current()
-    if db_user_data.is_in(USER_DATA.ID, user[USER_DATA.ID]):
+    if db_user_data.if_in(USER_DATA.ID, user[USER_DATA.ID]):
         db_user_data.pop(USER_DATA.ID, user[USER_DATA.ID])
     await state.finish()
     await message.answer("Вся информация о вас полностью очищена!", reply_markup=types.ReplyKeyboardRemove())
@@ -303,18 +373,73 @@ async def exit_(message: types.Message, state: FSMContext):
     await message.answer("Вышел", reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(Text(equals="Назад"), state=BotMainState.active)
+@dp.message_handler(Text(equals="Назад"), state=[BotMainState.active, BotMainState.settings])
 async def go_back(message: types.Message):
     await BotMainState.main.set()
     await message.answer("<-")
     await message.answer("Выберите действие", reply_markup=reply_keyboard_menu())
 
 
-@dp.message_handler(Text(equals="Назад"), state=BotMainState.settings)
-async def go_back(message: types.Message):
-    await BotMainState.main.set()
-    await message.answer("<-")
-    await message.answer("Выберите действие", reply_markup=reply_keyboard_menu())
+#_________________________ADMIN_PANEL____________________________#
+
+@dp.message_handler(Text(equals="Создать приглашение"), state=BotAdminState.main)
+async def add_invite(message: types.Message, state: FSMContext):
+    await message.answer("Придумайте приглашение:", reply_markup=types.ReplyKeyboardRemove())
+    await BotCreateInviteState.add_key.set()
+
+
+@dp.message_handler(state=BotCreateInviteState.add_key)
+async def add_right(message: types.Message, state: FSMContext):
+    try:
+        key = str(message.text)
+        async with state.proxy() as post_object:
+            post_object['key'] = key
+        await message.answer("Выберите права для приглашения", reply_markup=reply_keyboard_right())
+        await BotCreateInviteState.add_right.set()
+    except Exception as e:
+        await message.answer("Неизвестная ошибка1", reply_markup=reply_keyboard_admin_menu())
+        await BotAdminState.main.set()
+
+
+@dp.message_handler(state=BotCreateInviteState.add_right)
+async def add_right(message: types.Message, state: FSMContext):
+
+    try:
+        right = __format_right(message.text)
+        __check_right(right)
+        async with state.proxy() as post_object:
+            key = post_object['key']
+        db_invite.push({INVITE.KEY: key, USER_DATA.RIGHTS: right})
+        await message.answer('Приглашение создано\n'
+                             'Возврат в главное меню', reply_markup=reply_keyboard_admin_menu())
+        await BotAdminState.main.set()
+    except:
+        await message.answer("Неизвестная ошибка2", reply_markup=reply_keyboard_admin_menu())
+        await BotAdminState.main.set()
+
+
+def __format_right(_str):
+    if _str == 'User':
+        return RIGHTS.USER
+    elif _str == 'Admin':
+        return RIGHTS.ADMIN
+    else:
+        raise
+
+
+def __check_right(right):
+    if right == RIGHTS.USER or right == RIGHTS.ADMIN:
+        pass
+    else:
+        raise
+
+
+# @dp.message_handler(Text(equals="Ошибки"), state=BotAdminState.main)
+# async def get_errors(message: types.Message, state: FSMContext):
+#     for error in db_errors.find_all():
+
+
+
 
 
 if __name__ == '__main__':

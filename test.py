@@ -12,9 +12,9 @@ db = MongoFactory(db_name=MongoData.db_main, collection_name=MongoData.db_collec
 users_invite = db.generate()
 
 
-def get_id():
-
-    return users_requests.get_last_item('id_request')['id_request']
+# def get_id():
+#
+#     return users_requests.get_last_item('id_request')['id_request']
 
 
 # _id = get_id()+1
@@ -30,19 +30,25 @@ def get_id():
 
 # print(photo_path.get_filepath())
 users_invite.push({
-    INVITE.KEY: 'test'
+    INVITE.KEY: 'addmin',
+    USER_DATA.RIGHTS: RIGHTS.ADMIN
 })
 
-def __api_call(self, url, endpoint_data, type):
-    if type == RequestType.POST:
-        data = requests.post(url, endpoint_data)
-    else:
-        data = requests.get(url, endpoint_data)
+users_invite.push({
+    INVITE.KEY: 'test',
+    USER_DATA.RIGHTS: RIGHTS.USER
+})
 
-    response = dict()
-    response['url'] = url
-    response['endpoint_params'] = endpoint_data
-    response['endpoint_params_pretty'] = json.dumps(endpoint_data)
-    response['json_data'] = json.loads(data.content)
-    response['json_data_pretty'] = json.dumps(response['json_data'])
-    return response
+# def __api_call(self, url, endpoint_data, type):
+#     if type == RequestType.POST:
+#         data = requests.post(url, endpoint_data)
+#     else:
+#         data = requests.get(url, endpoint_data)
+#
+#     response = dict()
+#     response['url'] = url
+#     response['endpoint_params'] = endpoint_data
+#     response['endpoint_params_pretty'] = json.dumps(endpoint_data)
+#     response['json_data'] = json.loads(data.content)
+#     response['json_data_pretty'] = json.dumps(response['json_data'])
+#     return response

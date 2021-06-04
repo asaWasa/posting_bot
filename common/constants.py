@@ -1,10 +1,6 @@
 NONE = None
 
 
-class KEY:
-    API = 'api_key'
-
-
 class SOCIAL_NETWORKS:
     INSTAGRAM = 'instagram'
     VK = 'vk'
@@ -14,22 +10,28 @@ class SOCIAL_NETWORKS:
     TIKTOK = 'tiktok'
 
 
+class DEFAULT:
+    QUOTAS = {SOCIAL_NETWORKS.INSTAGRAM: 0, SOCIAL_NETWORKS.VK: 0, SOCIAL_NETWORKS.TWITTER: 0,
+              SOCIAL_NETWORKS.TIKTOK: 0, SOCIAL_NETWORKS.YOUTUBE: 0, SOCIAL_NETWORKS.TELEGRAM: 0}
+    SOCIAL_NETWORKS = {}
+    ERRORS = {}
+
+
+class KEY:
+    API = 'api_key'
+
+
 class USER_DATA:
     ID = 'id'
     IS_BOT = 'is_bot'
     FIRST_NAME = 'first_name'
     USERNAME = 'username'
-    LANGUAGE = 'language_code'
-    RIGHTS = 'rule'
+    LANGUAGE = 'language'
+    RIGHTS = 'rights'
     SOCIAL_NETWORK = 'social_network'
-    QUOTAS_USAGE = {SOCIAL_NETWORKS.INSTAGRAM: 0,
-                    SOCIAL_NETWORKS.VK: 0,
-                    SOCIAL_NETWORKS.TWITTER: 0,
-                    SOCIAL_NETWORKS.TIKTOK: 0,
-                    SOCIAL_NETWORKS.YOUTUBE: 0,
-                    SOCIAL_NETWORKS.TELEGRAM: 0
-                    }
+    QUOTAS_USAGE = 'quotas_usage'
     TIME = 'time'
+    ERRORS = 'errors'
 
 
 # todo вынести в отдельный файл
@@ -67,7 +69,7 @@ class MongoData:
     db_collection_invite = 'invite_keys'
     db_collection_requests = 'users_requests'
     db_collection_main_queue = 'main_queue'
-
+    db_collection_errors = 'errors'
 
 class Instagram:
     main_endpoint_request_api = "https://graph.facebook.com/"

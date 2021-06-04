@@ -28,9 +28,9 @@ class MongoDriver:
             print(e)
             pass
 
-    def get_last_item(self, param='id_request'):
+    def get_count(self, param='id_request'):
         self.__prepare()
-        return dict(list(self.collection.find().sort(param, -1).limit(1))[0])
+        return self.collection.count()
 
     def is_empty(self):
         self.__prepare()
@@ -54,7 +54,7 @@ class MongoDriver:
         except Exception as e:
             print(e)
 
-    def is_in(self, index=None, value=None):
+    def if_in(self, index=None, value=None):
         self.__prepare()
         return self.collection.find_one({index: value}) is not None
 

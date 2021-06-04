@@ -9,10 +9,10 @@ from common.errors import *
 class InstagramApi:
     def __init__(self, user_object, log=None):
         try:
-            self.params = self.__get_user_param(user_object)
             self.log = log
+            self.params = self.__get_user_param(user_object)
         except:
-            print("__init__ ERROR")
+            self.log.info("__init__ ERROR")
 
     def __get_user_param(self, user_object):
         # todo есть вероятность, что версия изменится, придумать как проверять версию api
@@ -55,7 +55,8 @@ class InstagramApi:
             while media_response['status'] != 'FINISHED':
                 status_media_object = self.get_status_media_object(media_id)
                 media_response['status'] = status_media_object
-                self.log.info('User {}; Media Status {}'.format(user_request['user_id'], status_media_object))
+                self.log.info('User {}; Media Status {}'.format(user_request['user_id'],
+                                                                status_media_object))
                 sleep(delay)
             """Опубликовать медиа объект"""
             response_media_object = self.__posting_media(media_id)
@@ -81,7 +82,7 @@ class InstagramApi:
             pass
         except Exception as e:
             # todo вернуть ошибку выше
-            print('error - {}'.format(e))
+            self.log('error - {}'.format(e))
             pass
 
     def __get_request_data(self, request):
@@ -102,7 +103,6 @@ class InstagramApi:
                         'status': 'IN_PROGRESS'}
             self.__check_response_errors(response)
             return response
-        # todo добавить логгирование
         except NoValidToken:
             self.log.info('Error token')
             raise NoValidToken
@@ -113,7 +113,7 @@ class InstagramApi:
             self.log.info('Error caption')
             raise BadCaption
         except Exception as e:
-            print('error media - {}'.format(e))
+            self.log.info('error media - {}'.format(e))
             raise e
 
     def __check_response_errors(self, data):
@@ -124,8 +124,8 @@ class InstagramApi:
                 raise NoValidToken
         except NoValidToken:
             raise NoValidToken
-        except:
-            pass
+        except Exception as e:
+            raise e
 
     def get_status_media_object(self, created_object_id):
         _id = created_object_id['id']

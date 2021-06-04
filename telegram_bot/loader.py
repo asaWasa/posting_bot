@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from database.mongodb.MongoFactory import MongoFactory
 from aiogram.contrib.fsm_storage.mongo import MongoStorage
-
+from statistic.statistic_module import Stats
 from database.mongodb.mongodriver import MongoDriver
 from common.config import api_key
 from common.constants import KEY, MongoData
@@ -34,3 +34,5 @@ db_invite = MongoDriver(MongoData.db_main, MongoData.db_collection_invite)
 
 # запросы пользователей
 db_user_request = MongoDriver(MongoData.db_main, MongoData.db_collection_requests)
+
+stats = Stats(MongoFactory)
