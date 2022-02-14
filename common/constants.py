@@ -1,3 +1,6 @@
+import emoji
+
+
 NONE = None
 
 
@@ -22,6 +25,7 @@ class UserRequest:
     User_id = 'user_id'
     Type_request = 'type_request'
     Data_object = 'data_object'
+    Social_network = 'social_network'
     Name = 'name'
     Date_creation = 'date_creation'
 

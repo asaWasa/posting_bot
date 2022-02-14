@@ -7,8 +7,9 @@ from common.errors import *
 
 
 class InstagramApi:
-    def __init__(self, user_object):
+    def __init__(self, user_object, logging=None):
         self.params = self.__get_user_param(user_object)
+        self.log = logging
 
     def __get_user_param(self, user_object):
         # todo есть вероятность, что версия изменится, придумать как проверять версию api

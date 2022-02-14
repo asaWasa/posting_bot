@@ -4,12 +4,13 @@ from datetime import datetime
 
 class UserRequestFormat:
     def __init__(self, data=None, id_request=None, user_id=None,
-                 type_request=None, data_object=None, name=None, date_creation=None):
+                 type_request=None, data_object=None, social_network=None, name=None, date_creation=None):
         self.data = dict(data)
         self.id_request = id_request
         self.user_id = user_id
         self.type_request = type_request
         self.data_object = data_object
+        self.social_network = social_network
         self.name = name
         self.date_creation = date_creation
 
@@ -29,6 +30,7 @@ class UserRequestFormat:
         result[UserRequest.User_id] = self.user_id
         result[UserRequest.Type_request] = self.type_request
         result[UserRequest.Data_object] = self.data_object
+        result[UserRequest.Social_network] = self.social_network
         result[UserRequest.Name] = self.name
         result[UserRequest.Date_creation] = datetime.now()
         return result

@@ -32,7 +32,7 @@ class Main:
 
     def __processing_request(self, request):
         try:
-            if "instagram" in request[UserRequest.Name]:
+            if "instagram" in request[UserRequest.Social_network]:
                 self.instagram.push(request)
 
         except Exception as e:
