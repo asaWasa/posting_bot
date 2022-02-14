@@ -7,18 +7,24 @@ from common.errors import *
 
 
 class InstagramApi:
-    def __init__(self, user_object, logging=None):
-        self.params = self.__get_user_param(user_object)
-        self.log = logging
+    def __init__(self, user_object, log=None):
+        try:
+            self.log = log
+            self.params = self.__get_user_param(user_object)
+        except:
+            self.log.info("__init__ ERROR")
 
     def __get_user_param(self, user_object):
         # todo есть вероятность, что версия изменится, придумать как проверять версию api
-        data = self.__get_user_data(user_object)
-        user_param = dict()
-        user_param['access_token'] = data['access_token']
-        user_param['endpoint_base'] = 'https://graph.facebook.com/v10.0/'
-        user_param['instagram_account_id'] = data['instagram_account_id']
-        return user_param
+        try:
+            data = self.__get_user_data(user_object)
+            user_param = dict()
+            user_param['access_token'] = data['access_token']
+            user_param['endpoint_base'] = 'https://graph.facebook.com/v10.0/'
+            user_param['instagram_account_id'] = data['instagram_account_id']
+            return user_param
+        except:
+            raise UserParamError
 
     def __get_user_data(self, user_data) -> dict:
         """Получить access_token и instagram_account_id пользователя"""
@@ -49,20 +55,21 @@ class InstagramApi:
             while media_response['status'] != 'FINISHED':
                 status_media_object = self.get_status_media_object(media_id)
                 media_response['status'] = status_media_object
-                print("---- IMAGE MEDIA OBJECT STATUS -----")
-                print("     Status Code:")
-                print("     " + media_response['status'])
+                self.log.info('User {}; Media Status {}'.format(user_request['user_id'],
+                                                                status_media_object))
                 sleep(delay)
             """Опубликовать медиа объект"""
             response_media_object = self.__posting_media(media_id)
             posting_limit = self.get_limit_posting_content()
-            # todo переделать ответ в dict
-            print("---- POSTING MEDIA OBJECT STATUS -----")
-            print("     ID:")
-            print("     " + str(response_media_object['json_data']))
-            print("     POSTING LIMIT USAGE:")
-            print("     " + str(posting_limit['json_data']))
-            return response_media_object, posting_limit
+            response_media_object = response_media_object['json_data']['id']
+            posting_limit = posting_limit['json_data']['data'][0]
+
+            self.log.info('User {}; Posting media id {}; Quota limit {}'
+                          .format(user_request['user_id'],
+                                  str(response_media_object['json_data']),
+                                  str(posting_limit)))
+            result = {'response': response_media_object, 'quota_usage': posting_limit}
+            return result
 
         except NoValidToken:
             # todo вернуть ошибку выше
@@ -75,7 +82,7 @@ class InstagramApi:
             pass
         except Exception as e:
             # todo вернуть ошибку выше
-            print('error - {}'.format(e))
+            self.log('error - {}'.format(e))
             pass
 
     def __get_request_data(self, request):
@@ -96,18 +103,17 @@ class InstagramApi:
                         'status': 'IN_PROGRESS'}
             self.__check_response_errors(response)
             return response
-        # todo добавить логгирование
         except NoValidToken:
-            print('---------------ERROR TOKEN---------------')
+            self.log.info('Error token')
             raise NoValidToken
         except BadImage:
-            print('---------------ERROR IMAGE---------------')
+            self.log.info('Error image')
             raise BadImage
         except BadCaption:
-            print('---------------ERROR CAPTION---------------')
+            self.log.info('Error caption')
             raise BadCaption
         except Exception as e:
-            print('error media - {}'.format(e))
+            self.log.info('error media - {}'.format(e))
             raise e
 
     def __check_response_errors(self, data):
@@ -118,8 +124,8 @@ class InstagramApi:
                 raise NoValidToken
         except NoValidToken:
             raise NoValidToken
-        except:
-            pass
+        except Exception as e:
+            raise e
 
     def get_status_media_object(self, created_object_id):
         _id = created_object_id['id']

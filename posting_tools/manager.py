@@ -17,10 +17,7 @@ class Manager:
             if not self.manager_queue.is_empty():
                 try:
                     request = self.manager_queue.pop()
-                    # todo Вынести проверку ошибок в отдельную функцию
-                    self.__check_request(request)
-                    self.__check_name_handler(self.name_handler)
-
+                    self.__check(request)
                     self.__run_request(request)
                 except BadRequest:
                     print('Bad request - {}'.format(request))
@@ -32,16 +29,20 @@ class Manager:
                     print(e)
             time.sleep(1)
 
+    def __check(self, req):
+        self.__check_request(req)
+        self.__check_name_handler()
+
     def __check_request(self, request):
         if not request:
             raise EmptyRequest
         if request is None:
             raise RequestIsNone
 
-    def __check_name_handler(self, name_handler):
-        if name_handler is None:
+    def __check_name_handler(self):
+        if self.name_handler is None:
             raise BadNameHandler
-        if not name_handler:
+        if not self.name_handler:
             raise BadNameHandler
 
     def __run_request(self, request):
@@ -69,5 +70,6 @@ class Manager:
             print('user_id not find')
 
     def get_social_media_data(self, data):
+        #todo поменять на константу
         social_net = data['social_network']
         return social_net[self.name_handler]

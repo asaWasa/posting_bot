@@ -3,54 +3,12 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Text
 from aiogram.utils import executor
-from loader import dp, db_user_data, db_invite, db_user_request
-from common.constants import UserData, UserRequest, Invite, SocialNetwork, UserTypeRequest
-from database.db_format.user_data import UserDataFormat
+from loader import dp, db_user_data, db_invite, db_user_request, stats
+from common.constants import USER_DATA, UserRequest, INVITE, SOCIAL_NETWORKS, UserTypeRequest, RIGHTS
+from database.db_format.user_data import ElementaryUserDataFormat
 from database.db_format.user_request import UserRequestFormat
-# from posting_tools.tmp_photo import photo_path
 from posting_tools.telegram.telegram_api import get_photo_path
 from common.errors import *
-
-
-def reply_keyboard_menu():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    markup.add("Сделать пост")
-    markup.add("Настройки", "Выход")
-    return markup
-
-
-def reply_add_social_networks():
-    media = types.InlineKeyboardMarkup(row_width=3)
-    social_network = [SocialNetwork.Instagram, SocialNetwork.Vk, SocialNetwork.YouTube]
-    btns = list()
-    for net in social_network:
-        btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
-    media.add(*btns)
-    return media
-
-
-def reply_keyboard_skip_caption():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
-    markup.add("Пропустить")
-    markup.add("Назад")
-    return markup
-
-
-def get_id(request_table, param_for_search='id_request'):
-    try:
-        return int(request_table.get_last_item(param_for_search)[param_for_search]) + 1
-    except:
-        return 0
-
-
-def __check_photo(photo):
-    pass
-
-
-def __check_caption(caption):
-    if caption == 'Пропустить':
-        return ''
-    return caption
 
 
 class BotMainState(StatesGroup):
@@ -62,6 +20,12 @@ class BotMainState(StatesGroup):
     end = State()  # state ending
 
 
+class BotAdminState(StatesGroup):
+    main = State()  # state main menu
+    active = State()  # state for posting info
+    settings = State()  # state for changing settings
+
+
 # todo можно переделать в одно состояние и добавить его к основным состояниям
 class BotAddSocialState(StatesGroup):
     name = State()
@@ -71,6 +35,76 @@ class BotAddSocialState(StatesGroup):
 
 class BotAddPostState(StatesGroup):
     post_processing = State()
+
+
+class BotCreateInviteState(StatesGroup):
+    add_key = State()
+    add_right = State()
+
+
+def reply_keyboard_menu():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("Сделать пост")
+    markup.add("Настройки", "Выход")
+    return markup
+
+
+def reply_keyboard_admin_menu():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("Сделать пост", 'Создать приглашение')
+    markup.add("Настройки", "Ошибки")
+    markup.add('Выход')
+    return markup
+
+
+def reply_keyboard_backward():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("Назад")
+    return markup
+
+
+def reply_passive_social_networks_keyboard():
+    btns = list()
+    media = types.InlineKeyboardMarkup(row_width=3)
+    social_network = [SOCIAL_NETWORKS.INSTAGRAM, SOCIAL_NETWORKS.VK, SOCIAL_NETWORKS.YOUTUBE,
+                      SOCIAL_NETWORKS.TIKTOK, SOCIAL_NETWORKS.TWITTER]
+    for net in social_network:
+        btns.append(types.InlineKeyboardButton(text="{}".format(net), callback_data='add_{}'.format(net)))
+    media.add(*btns)
+    return media
+
+
+def reply_active_social_networks_keyboard(social_networks):
+    btns = list()
+    media = types.InlineKeyboardMarkup(row_width=3)
+    for net in social_networks:
+        btns.append(types.InlineKeyboardButton("{}".format(net), callback_data='post_{}'.format(net)))
+    media.add(*btns)
+    if len(social_networks) > 1:
+        media.add(types.InlineKeyboardButton("All", callback_data='all'))
+    return media
+
+
+def reply_keyboard_right():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add("User")
+    markup.add("Admin")
+    return markup
+
+
+def get_id(request_table, param_for_search='id_request'):
+    try:
+        return int(request_table.get_count(param_for_search)[param_for_search]) + 1
+    except:
+        return 0
+
+
+def __check_photo(photo):
+    pass
+
+
+def __check_caption(caption):
+    pass
 
 
 @dp.message_handler(commands=['start'], state='*')
@@ -111,10 +145,9 @@ async def add_post(message: types.Message):
     markup.add("Назад")
     await BotMainState.active.set()
     await message.answer("Выберите нужную социальную сеть или отправьте сразу во все", reply_markup=markup)
-    media = types.InlineKeyboardMarkup(row_width=3)
     user = types.User.get_current()
-    user = db_user_data.get(UserData.Id, user[UserData.Id])
-    social_networks = user[UserData.Social_net]
+    user = db_user_data.get(USER_DATA.ID, user[USER_DATA.ID])
+    social_networks = user[USER_DATA.SOCIAL_NETWORK]
     btns = list()
     if social_networks is None or social_networks == {}:
         await message.answer('У вас нет подключенных сетей')
@@ -146,14 +179,24 @@ async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     await query.message.answer('Введите отображаемое название:', reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.Vk), state=BotMainState.active)
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.VK), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery):
-    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
+    await query.message.answer('Скоро...', reply_markup=reply_keyboard_backward())
 
 
-@dp.callback_query_handler(Text(equals='add_' + SocialNetwork.YouTube), state=BotMainState.active)
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.YOUTUBE), state=BotMainState.active)
 async def callback_button_media(query: types.CallbackQuery):
-    await query.message.answer('Скоро...', reply_markup=types.ReplyKeyboardRemove())
+    await query.message.answer('Скоро...', reply_markup=reply_keyboard_backward())
+
+
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.TWITTER), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Скоро...', reply_markup=reply_keyboard_backward())
+
+
+@dp.callback_query_handler(Text(equals='add_' + SOCIAL_NETWORKS.TIKTOK), state=BotMainState.active)
+async def callback_button_media(query: types.CallbackQuery):
+    await query.message.answer('Скоро...', reply_markup=reply_keyboard_backward())
 
 
 @dp.message_handler(state=BotAddSocialState.name)
@@ -237,7 +280,7 @@ def __check_token(token):
 async def callback_button_media(query: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as social_net:
         social_net['name_social_net'] = SocialNetwork.Instagram
-        
+
     await query.message.answer('Отправте изображение:', reply_markup=types.ReplyKeyboardRemove())
     await BotAddPostState.post_processing.set()
 
@@ -327,10 +370,10 @@ async def exit_(message: types.Message, state: FSMContext):
 async def exit_(message: types.Message, state: FSMContext):
     markup = types.ReplyKeyboardRemove()
     await state.finish()
-    await message.answer("Вышел", reply_markup=markup)
+    await message.answer("Вышел", reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(Text(equals="Назад"), state=BotMainState.active)
+@dp.message_handler(Text(equals="Назад"), state=[BotMainState.active, BotMainState.settings])
 async def go_back(message: types.Message):
     await BotMainState.main.set()
     await message.answer("<-")

@@ -1,20 +1,27 @@
 from aiogram import Bot, Dispatcher
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-# from aiogram.contrib.fsm_storage.mongo import MongoStorage
+from database.mongodb.MongoFactory import MongoFactory
+from aiogram.contrib.fsm_storage.mongo import MongoStorage
+from statistic.statistic_module import Stats
 from database.mongodb.mongodriver import MongoDriver
 from common.config import api_key
-from common.constants import Key, MongoData
+from common.constants import KEY, MongoData
 import logging
 
 # логгирование
 logging.basicConfig(level=logging.INFO)
 
 # бот
-bot = Bot(token=api_key[Key.Api])
+bot = Bot(token=api_key[KEY.API])
 
 # todo заменить хранилище состояний, чтобы состояния хранились в базе mongodb  (MongoStorage)
 # хранилище состояний
-storage = MemoryStorage()  # хранилище состояний использует оперативную память
+
+# storage = MemoryStorage()  # хранилище состояний использует оперативную память
+storage = MongoStorage(
+    host='localhost',
+    port=27017,
+    db_name='posting_bot_fsm'
+)  # Хранилище состояний использует базу данных mongodb
 
 # диспетчер для обработки действий пользователя
 dp = Dispatcher(bot, storage=storage)
@@ -27,3 +34,5 @@ db_invite = MongoDriver(MongoData.db_main, MongoData.db_collection_invite)
 
 # запросы пользователей
 db_user_request = MongoDriver(MongoData.db_main, MongoData.db_collection_requests)
+
+stats = Stats(MongoFactory)

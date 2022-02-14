@@ -12,9 +12,17 @@ Database objects with access to social networks
     "admin_rule": 0,
     "social_network": {
         "instagram": {
+            name:{
             "access_token": "123...",
             "business_id": "1234",
             "secret_key":"12dvvb...",
+            },
+            name:{
+            "access_token": "123...",
+            "business_id": "1234",
+            "secret_key":"12dvvb...",
+            },
         }
+        ""
     }
 }

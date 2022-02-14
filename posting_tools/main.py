@@ -1,5 +1,5 @@
 from database.mongodb.mongodriver import MongoDriver
-from common.constants import MongoData, Queues
+from common.constants import MongoData, QUEUES
 import time
 from signal import *
 from common.constants import UserRequest
@@ -12,7 +12,7 @@ class Main:
         self.flag = True
         self.main_queue = main_queue
         try:
-            self.instagram = MongoDriver(db_name=MongoData.db_queues, collection_name=Queues.Instagram)
+            self.instagram = MongoDriver(db_name=MongoData.db_queues, collection_name=QUEUES.INSTAGRAM)
             # self.vk = MongoDriver(db_name=MongoData.db_queues, collection_name=Queues.Vk)
             # self.youtube = MongoDriver(db_name=MongoData.db_queues, collection_name=Queues.YouTube)
         except Exception as e:
